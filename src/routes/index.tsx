@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { motion } from "framer-motion";
@@ -25,7 +25,6 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const fetchProducts = useServerFn(listProducts);
-  const navigate = useNavigate();
   const { data, isLoading } = useQuery<Product[]>({
     queryKey: ["products"],
     queryFn: () => fetchProducts(),
