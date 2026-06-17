@@ -68,14 +68,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lumen — Boutique tech minimaliste" },
+      { title: "Zandu — Vos essentiels, livrés en un éclair" },
       {
         name: "description",
         content:
-          "Lumen est une boutique en ligne minimaliste pour les objets tech essentiels : audio, wearables, accessoires.",
+          "Zandu, votre plateforme express pour commander vos essentiels et recevoir vos produits rapidement, simplement, à petit prix.",
       },
-      { property: "og:title", content: "Lumen — Boutique tech minimaliste" },
-      { property: "og:description", content: "L'essentiel de la tech, soigneusement sélectionné." },
+      { property: "og:title", content: "Zandu — Vos essentiels, livrés en un éclair" },
+      { property: "og:description", content: "Livraison rapide, prix accessibles, expérience fluide." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -83,7 +83,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "stylesheet", href: appCss },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap",
       },
     ],
   }),

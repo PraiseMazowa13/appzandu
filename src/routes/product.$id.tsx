@@ -8,11 +8,11 @@ import { getProduct } from "@/lib/products.functions";
 import { useCart, formatPrice } from "@/stores/cart";
 
 export const Route = createFileRoute("/product/$id")({
-  head: ({ params }) => ({
+  head: () => ({
     meta: [
-      { title: `Produit — Lumen` },
-      { name: "description", content: `Détails du produit sur Lumen.` },
-      { property: "og:title", content: `Produit — Lumen` },
+      { title: `Produit — Zandu` },
+      { name: "description", content: `Détails du produit sur Zandu.` },
+      { property: "og:title", content: `Produit — Zandu` },
     ],
   }),
   component: ProductPage,

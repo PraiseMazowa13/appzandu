@@ -29,6 +29,8 @@ const ProductSchema = z.object({
   stock: z.number().int().nonnegative(),
   category: z.string().optional().nullable(),
   image_url: z.string().url().optional().nullable(),
+  discount_percent: z.number().int().min(0).max(100).optional().default(0),
+  free_shipping: z.boolean().optional().default(false),
 });
 
 export const adminListAllProducts = createServerFn({ method: "GET" })
@@ -66,6 +68,16 @@ export const adminToggleProduct = createServerFn({ method: "POST" })
       .from("products")
       .update({ is_active: data.is_active })
       .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const adminDeleteProduct = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    await ensureAdmin(context);
+    const { error } = await context.supabase.from("products").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

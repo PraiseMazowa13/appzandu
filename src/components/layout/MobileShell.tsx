@@ -1,36 +1,39 @@
-import { Link, useRouter, useRouterState } from "@tanstack/react-router";
-import { Home, ShoppingBag, User, Search, Package } from "lucide-react";
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { ShoppingBag, User, LogIn } from "lucide-react";
 import { useCart } from "@/stores/cart";
+import { useAuth } from "@/hooks/useAuth";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
 import type { ReactNode } from "react";
 
 export function MobileShell({ children }: { children: ReactNode }) {
   const { totalCount, open } = useCart();
   const count = totalCount();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
-  const nav = [
-    { to: "/", icon: Home, label: "Accueil" },
-    { to: "/orders", icon: Package, label: "Commandes" },
-    { to: "/account", icon: User, label: "Compte" },
-  ];
-
   return (
-    <div className="relative min-h-screen pb-28">
+    <div className="relative min-h-screen pb-12">
       {/* Top bar */}
       <header className="sticky top-0 z-30 glass">
-        <div className="mx-auto flex max-w-2xl items-center justify-between px-5 py-3">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="grid h-9 w-9 place-items-center rounded-2xl bg-gradient-hero text-primary-foreground shadow-soft">
-              <ShoppingBag className="h-4 w-4" />
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+          <Link to="/" className="flex min-w-0 items-center gap-2">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-gradient-hero text-primary-foreground shadow-soft">
+              <span className="font-display text-sm font-extrabold">Z</span>
             </div>
-            <span className="font-display text-lg font-bold tracking-tight">Lumen</span>
+            <span className="font-display text-lg font-extrabold tracking-tight">Zandu</span>
           </Link>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <Search className="h-5 w-5" />
-            </Button>
+
+          <nav className="hidden items-center gap-6 sm:flex">
+            <Link to="/" className={`text-sm font-semibold ${pathname === "/" ? "text-primary" : "text-foreground/70"}`}>
+              Accueil
+            </Link>
+            <Link to="/shop" className={`text-sm font-semibold ${pathname === "/shop" ? "text-primary" : "text-foreground/70"}`}>
+              Catalogue
+            </Link>
+          </nav>
+
+          <div className="flex shrink-0 items-center gap-2">
             <button
               onClick={open}
               className="relative grid h-10 w-10 place-items-center rounded-full bg-foreground text-background shadow-soft transition-transform active:scale-95"
@@ -47,44 +50,28 @@ export function MobileShell({ children }: { children: ReactNode }) {
                 </motion.span>
               )}
             </button>
+            {user ? (
+              <button
+                onClick={() => navigate({ to: "/account" })}
+                className="grid h-10 w-10 place-items-center rounded-full bg-card text-foreground shadow-soft ring-1 ring-border"
+                aria-label="Compte"
+              >
+                <User className="h-4 w-4" />
+              </button>
+            ) : (
+              <button
+                onClick={() => navigate({ to: "/auth" })}
+                className="inline-flex items-center gap-1.5 rounded-full bg-gradient-hero px-3.5 py-2 text-xs font-bold text-primary-foreground shadow-soft transition-transform active:scale-95 sm:px-4 sm:text-sm"
+              >
+                <LogIn className="h-3.5 w-3.5" />
+                Connexion
+              </button>
+            )}
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-2xl px-5 pt-2">{children}</main>
-
-      {/* Bottom nav */}
-      <nav className="fixed inset-x-0 bottom-4 z-30 mx-auto w-[calc(100%-2rem)] max-w-sm">
-        <div className="glass flex items-center justify-around rounded-full px-2 py-2 shadow-float">
-          {nav.map((item) => {
-            const active = pathname === item.to;
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className="relative flex flex-1 flex-col items-center gap-0.5 rounded-full px-3 py-1.5"
-              >
-                {active && (
-                  <motion.div
-                    layoutId="nav-pill"
-                    className="absolute inset-0 rounded-full bg-gradient-hero"
-                    transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
-                  />
-                )}
-                <Icon
-                  className={`relative h-5 w-5 ${active ? "text-primary-foreground" : "text-muted-foreground"}`}
-                />
-                <span
-                  className={`relative text-[10px] font-medium ${active ? "text-primary-foreground" : "text-muted-foreground"}`}
-                >
-                  {item.label}
-                </span>
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
+      <main className="mx-auto max-w-6xl px-4 pt-3 sm:px-6">{children}</main>
     </div>
   );
 }

@@ -11,11 +11,13 @@ function publicClient() {
   );
 }
 
+const SELECT = "id, name, description, price_cents, stock, image_url, category, is_active, discount_percent, free_shipping";
+
 export const listProducts = createServerFn({ method: "GET" }).handler(async () => {
   const supabase = publicClient();
   const { data, error } = await supabase
     .from("products")
-    .select("id, name, description, price_cents, stock, image_url, category, is_active")
+    .select(SELECT)
     .eq("is_active", true)
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
@@ -28,7 +30,7 @@ export const getProduct = createServerFn({ method: "GET" })
     const supabase = publicClient();
     const { data: p, error } = await supabase
       .from("products")
-      .select("id, name, description, price_cents, stock, image_url, category, is_active")
+      .select(SELECT)
       .eq("id", data.id)
       .eq("is_active", true)
       .maybeSingle();

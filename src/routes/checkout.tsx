@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 
 export const Route = createFileRoute("/checkout")({
-  head: () => ({ meta: [{ title: "Checkout — Lumen" }] }),
+  head: () => ({ meta: [{ title: "Commande — Zandu" }] }),
   component: CheckoutPage,
 });
 
