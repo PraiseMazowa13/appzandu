@@ -59,5 +59,12 @@ export const useCart = create<CartState>()(
   ),
 );
 
-export const formatPrice = (cents: number) =>
-  new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(cents / 100);
+/**
+ * Price are stored as integer Francs Congolais (FC) in the DB column `price_cents`.
+ * The column name is legacy — values are whole FC, no minor unit.
+ */
+export const formatPrice = (fc: number) =>
+  `${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(fc)} FC`;
+
+export const discountedPrice = (fc: number, percent: number) =>
+  Math.round(fc * (1 - Math.max(0, Math.min(100, percent)) / 100));

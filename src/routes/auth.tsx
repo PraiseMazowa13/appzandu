@@ -6,7 +6,7 @@ import { lovable } from "@/integrations/lovable";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
-  head: () => ({ meta: [{ title: "Connexion — Lumen" }] }),
+  head: () => ({ meta: [{ title: "Connexion — Zandu" }] }),
   component: AuthPage,
 });
 
@@ -30,9 +30,9 @@ function AuthPage() {
       <div className="w-full max-w-sm space-y-6 rounded-3xl bg-card p-8 shadow-float">
         <div className="text-center">
           <div className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-3xl bg-gradient-hero text-primary-foreground shadow-soft">
-            <span className="font-display text-xl font-extrabold">L</span>
+            <span className="font-display text-xl font-extrabold">Z</span>
           </div>
-          <h1 className="font-display text-2xl font-extrabold">Bienvenue sur Lumen</h1>
+          <h1 className="font-display text-2xl font-extrabold">Bienvenue sur Zandu</h1>
           <p className="mt-1 text-sm text-muted-foreground">Connectez-vous pour continuer</p>
         </div>
         <Button
