@@ -43,7 +43,7 @@ export function CartSheet() {
                         <span className="text-xl font-bold text-primary/40">{item.name.charAt(0)}</span>
                       )}
                     </div>
-                    <div className="flex flex-1 flex-col justify-between">
+                    <div className="flex min-w-0 flex-1 flex-col justify-between">
                       <div className="flex items-start justify-between gap-2">
                         <h4 className="line-clamp-1 text-sm font-semibold">{item.name}</h4>
                         <button onClick={() => remove(item.id)} className="text-muted-foreground hover:text-destructive">
@@ -89,10 +89,10 @@ export function CartSheet() {
               className="w-full rounded-2xl bg-gradient-hero text-primary-foreground shadow-soft"
               onClick={() => {
                 close();
-                navigate({ to: "/checkout" });
+                navigate({ to: "/commande" });
               }}
             >
-              Valider la commande
+              Passer la commande
             </Button>
           </div>
         )}

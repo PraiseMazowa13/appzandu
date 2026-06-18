@@ -11,7 +11,8 @@ function publicClient() {
   );
 }
 
-const SELECT = "id, name, description, price_cents, stock, image_url, category, is_active, discount_percent, free_shipping";
+const SELECT =
+  "id, name, description, price_cents, compare_at_price_cents, stock, image_url, category, is_active, badge, discount_percent, free_shipping, created_at";
 
 export const listProducts = createServerFn({ method: "GET" }).handler(async () => {
   const supabase = publicClient();
