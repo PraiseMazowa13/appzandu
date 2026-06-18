@@ -80,8 +80,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:title", content: "Zandu — Vos essentiels, livrés en un éclair" },
       { name: "description", content: "Aura Commerce is a modern, minimalist e-commerce platform for visually appealing online stores." },
       { name: "twitter:description", content: "Aura Commerce is a modern, minimalist e-commerce platform for visually appealing online stores." },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/75107bdb-ab6f-4085-bf3f-f13e0abb96b6" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/75107bdb-ab6f-4085-bf3f-f13e0abb96b6" },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/16e61052-b45f-43f1-8c19-f10185ec2235" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/16e61052-b45f-43f1-8c19-f10185ec2235" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
