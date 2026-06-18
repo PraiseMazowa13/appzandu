@@ -82,7 +82,9 @@ export type Database = {
       }
       products: {
         Row: {
+          badge: string | null
           category: string | null
+          compare_at_price_cents: number | null
           created_at: string
           description: string | null
           discount_percent: number
@@ -95,7 +97,9 @@ export type Database = {
           stock: number
         }
         Insert: {
+          badge?: string | null
           category?: string | null
+          compare_at_price_cents?: number | null
           created_at?: string
           description?: string | null
           discount_percent?: number
@@ -108,7 +112,9 @@ export type Database = {
           stock?: number
         }
         Update: {
+          badge?: string | null
           category?: string | null
+          compare_at_price_cents?: number | null
           created_at?: string
           description?: string | null
           discount_percent?: number
