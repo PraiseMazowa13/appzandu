@@ -405,105 +405,106 @@ function ProductForm({
   onUpload: (file: File) => Promise<string>;
 }) {
   const [uploading, setUploading] = useState(false);
+  const [promoMode, setPromoMode] = useState<"none" | "percent" | "price">(() => {
+    if (
+      value.compare_at_price_cents &&
+      value.price_cents &&
+      value.compare_at_price_cents > value.price_cents
+    ) {
+      return "price";
+    }
+    return "none";
+  });
+  const [percent, setPercent] = useState<number>(() => {
+    const cp = value.compare_at_price_cents ?? 0;
+    const p = value.price_cents ?? 0;
+    if (cp > p && cp > 0) return Math.round(((cp - p) / cp) * 100);
+    return 20;
+  });
+
+  const applyPercent = (pct: number, currentPrice: number) => {
+    if (!currentPrice || pct <= 0 || pct >= 100) return;
+    const compare = Math.round(currentPrice / (1 - pct / 100));
+    onChange({ ...value, compare_at_price_cents: compare });
+  };
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-end bg-foreground/40 backdrop-blur-sm md:place-items-center">
-      <div className="w-full max-w-2xl rounded-t-3xl bg-background p-6 shadow-float md:max-h-[90vh] md:overflow-y-auto md:rounded-3xl">
-        <div className="flex items-center justify-between">
-          <h3 className="font-display text-xl font-black">
-            {value.id ? "Modifier le produit" : "Nouveau produit"}
-          </h3>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/40 backdrop-blur-sm md:items-center md:p-6">
+      <div className="flex max-h-[95vh] w-full max-w-3xl flex-col rounded-t-3xl bg-background shadow-float md:max-h-[90vh] md:rounded-3xl">
+        <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4 md:px-6">
+          <div className="min-w-0">
+            <h3 className="truncate font-display text-lg font-black md:text-xl">
+              {value.id ? "Modifier le produit" : "Nouveau produit"}
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              Remplissez les informations ci-dessous
+            </p>
+          </div>
           <button
             onClick={onClose}
-            className="rounded-full bg-muted px-3 py-1 text-xs font-semibold"
+            className="shrink-0 rounded-full bg-muted px-3 py-1.5 text-xs font-semibold hover:bg-muted/70"
           >
             Fermer
           </button>
         </div>
 
-        <div className="mt-5 grid gap-3 md:grid-cols-2">
-          <Field label="Titre">
-            <input
-              value={value.name ?? ""}
-              onChange={(e) => onChange({ ...value, name: e.target.value })}
-              className="input"
-            />
-          </Field>
-          <Field label="Catégorie">
-            <input
-              value={value.category ?? ""}
-              onChange={(e) => onChange({ ...value, category: e.target.value })}
-              className="input"
-            />
-          </Field>
-          <Field label="Prix actuel (FC)">
-            <input
-              type="number"
-              min={0}
-              value={value.price_cents ?? 0}
-              onChange={(e) => onChange({ ...value, price_cents: Number(e.target.value) })}
-              className="input"
-            />
-          </Field>
-          <Field label="Ancien prix barré (FC, optionnel)">
-            <input
-              type="number"
-              min={0}
-              value={value.compare_at_price_cents ?? ""}
-              onChange={(e) =>
-                onChange({
-                  ...value,
-                  compare_at_price_cents: e.target.value ? Number(e.target.value) : null,
-                })
-              }
-              className="input"
-            />
-          </Field>
-          <Field label="Stock">
-            <input
-              type="number"
-              min={0}
-              value={value.stock ?? 0}
-              onChange={(e) => onChange({ ...value, stock: Number(e.target.value) })}
-              className="input"
-            />
-          </Field>
-          <Field label="Badge (Promo, Nouveau, Best Seller...)">
-            <input
-              value={value.badge ?? ""}
-              onChange={(e) => onChange({ ...value, badge: e.target.value })}
-              className="input"
-              list="badges-list"
-            />
-            <datalist id="badges-list">
-              <option value="Promo" />
-              <option value="Nouveau" />
-              <option value="Best Seller" />
-            </datalist>
-          </Field>
-          <div className="md:col-span-2">
-            <Field label="Description">
-              <textarea
-                rows={3}
-                value={value.description ?? ""}
-                onChange={(e) => onChange({ ...value, description: e.target.value })}
-                className="input resize-none"
-              />
-            </Field>
-          </div>
-          <div className="md:col-span-2">
-            <Field label="Image du produit">
-              <div className="flex flex-wrap items-center gap-3">
-                {value.image_url && (
-                  <img
-                    src={value.image_url}
-                    alt=""
-                    className="h-20 w-20 rounded-2xl object-cover"
+        <div className="flex-1 overflow-y-auto px-5 py-5 md:px-6 md:py-6">
+          <Section title="Informations">
+            <div className="grid gap-3 md:grid-cols-2">
+              <Field label="Titre du produit *">
+                <input
+                  value={value.name ?? ""}
+                  onChange={(e) => onChange({ ...value, name: e.target.value })}
+                  className="input"
+                  placeholder="Ex. Sneakers Cloud Runner"
+                />
+              </Field>
+              <Field label="Catégorie">
+                <input
+                  value={value.category ?? ""}
+                  onChange={(e) => onChange({ ...value, category: e.target.value })}
+                  className="input"
+                  placeholder="Mode, Tech, Audio..."
+                  list="cat-list"
+                />
+                <datalist id="cat-list">
+                  <option value="Mode" />
+                  <option value="Tech" />
+                  <option value="Audio" />
+                  <option value="Maison" />
+                  <option value="Beauté" />
+                  <option value="Sport" />
+                </datalist>
+              </Field>
+              <div className="md:col-span-2">
+                <Field label="Description">
+                  <textarea
+                    rows={3}
+                    value={value.description ?? ""}
+                    onChange={(e) =>
+                      onChange({ ...value, description: e.target.value })
+                    }
+                    className="input resize-none"
+                    placeholder="Décrivez le produit, ses caractéristiques et avantages."
                   />
+                </Field>
+              </div>
+            </div>
+          </Section>
+
+          <Section title="Image du produit">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+              <div className="grid h-28 w-28 shrink-0 place-items-center overflow-hidden rounded-2xl border border-border bg-gradient-soft">
+                {value.image_url ? (
+                  <img src={value.image_url} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <span className="text-xs text-muted-foreground">Aperçu</span>
                 )}
-                <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-muted px-4 py-2 text-xs font-semibold hover:bg-muted/70">
+              </div>
+              <div className="flex flex-1 flex-col gap-2">
+                <label className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground hover:opacity-95 sm:w-auto">
                   <Upload className="h-3.5 w-3.5" />
-                  {uploading ? "Envoi..." : "Téléverser une image"}
+                  {uploading ? "Envoi en cours..." : "Téléverser une image"}
                   <input
                     type="file"
                     accept="image/*"
@@ -526,48 +527,232 @@ function ProductForm({
                   />
                 </label>
                 <input
-                  placeholder="...ou collez une URL"
+                  placeholder="...ou collez une URL d'image"
                   value={value.image_url ?? ""}
                   onChange={(e) => onChange({ ...value, image_url: e.target.value })}
-                  className="input flex-1 min-w-[200px]"
+                  className="input"
                 />
               </div>
-            </Field>
-          </div>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={value.is_active ?? true}
-              onChange={(e) => onChange({ ...value, is_active: e.target.checked })}
-            />
-            Produit actif (visible en boutique)
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={value.free_shipping ?? false}
-              onChange={(e) => onChange({ ...value, free_shipping: e.target.checked })}
-            />
-            Livraison offerte
-          </label>
+            </div>
+          </Section>
+
+          <Section title="Prix & promotion">
+            <div className="grid gap-3 md:grid-cols-2">
+              <Field label="Prix de vente (FC) *">
+                <input
+                  type="number"
+                  min={0}
+                  value={value.price_cents ?? 0}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    onChange({ ...value, price_cents: v });
+                    if (promoMode === "percent") applyPercent(percent, v);
+                  }}
+                  className="input"
+                />
+              </Field>
+              <Field label="Stock disponible">
+                <input
+                  type="number"
+                  min={0}
+                  value={value.stock ?? 0}
+                  onChange={(e) => onChange({ ...value, stock: Number(e.target.value) })}
+                  className="input"
+                />
+              </Field>
+
+              <div className="md:col-span-2">
+                <label className="text-xs font-semibold text-muted-foreground">
+                  Type de promotion
+                </label>
+                <div className="mt-1 grid grid-cols-3 gap-2 rounded-full bg-muted p-1">
+                  {(["none", "percent", "price"] as const).map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => {
+                        setPromoMode(m);
+                        if (m === "none")
+                          onChange({ ...value, compare_at_price_cents: null });
+                        if (m === "percent") applyPercent(percent, value.price_cents ?? 0);
+                      }}
+                      className={`rounded-full px-3 py-2 text-xs font-semibold transition ${
+                        promoMode === m
+                          ? "bg-background text-foreground shadow-card"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {m === "none" ? "Aucune" : m === "percent" ? "% réduction" : "Ancien prix"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {promoMode === "percent" && (
+                <div className="md:col-span-2">
+                  <Field label={`Réduction appliquée : ${percent}%`}>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="range"
+                        min={5}
+                        max={80}
+                        step={1}
+                        value={percent}
+                        onChange={(e) => {
+                          const p = Number(e.target.value);
+                          setPercent(p);
+                          applyPercent(p, value.price_cents ?? 0);
+                        }}
+                        className="flex-1 accent-primary"
+                      />
+                      <input
+                        type="number"
+                        min={1}
+                        max={99}
+                        value={percent}
+                        onChange={(e) => {
+                          const p = Number(e.target.value);
+                          setPercent(p);
+                          applyPercent(p, value.price_cents ?? 0);
+                        }}
+                        className="input h-10 w-20"
+                      />
+                    </div>
+                    {value.compare_at_price_cents && value.price_cents ? (
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        Ancien prix :{" "}
+                        <span className="font-semibold text-foreground">
+                          {formatPrice(value.compare_at_price_cents)}
+                        </span>{" "}
+                        · économie de{" "}
+                        <span className="font-semibold text-primary">
+                          {formatPrice(value.compare_at_price_cents - value.price_cents)}
+                        </span>
+                      </p>
+                    ) : null}
+                  </Field>
+                </div>
+              )}
+
+              {promoMode === "price" && (
+                <div className="md:col-span-2">
+                  <Field label="Ancien prix barré (FC)">
+                    <input
+                      type="number"
+                      min={0}
+                      value={value.compare_at_price_cents ?? ""}
+                      onChange={(e) =>
+                        onChange({
+                          ...value,
+                          compare_at_price_cents: e.target.value
+                            ? Number(e.target.value)
+                            : null,
+                        })
+                      }
+                      className="input"
+                      placeholder="Ex. 199000"
+                    />
+                  </Field>
+                </div>
+              )}
+            </div>
+          </Section>
+
+          <Section title="Étiquette & visibilité">
+            <div className="grid gap-3 md:grid-cols-2">
+              <Field label="Badge affiché">
+                <input
+                  value={value.badge ?? ""}
+                  onChange={(e) => onChange({ ...value, badge: e.target.value })}
+                  className="input"
+                  placeholder="Promo, Nouveau, Best Seller..."
+                  list="badges-list"
+                />
+                <datalist id="badges-list">
+                  <option value="Promo" />
+                  <option value="Nouveau" />
+                  <option value="Best Seller" />
+                  <option value="Édition limitée" />
+                  <option value="Soldes" />
+                </datalist>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {["Promo", "Nouveau", "Best Seller"].map((b) => (
+                    <button
+                      key={b}
+                      type="button"
+                      onClick={() => onChange({ ...value, badge: b })}
+                      className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold hover:bg-muted/70"
+                    >
+                      {b}
+                    </button>
+                  ))}
+                </div>
+              </Field>
+              <div className="flex flex-col gap-3">
+                <label className="flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-border bg-card p-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold">Visible en boutique</p>
+                    <p className="text-xs text-muted-foreground">
+                      Affiche ce produit dans le catalogue
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    className="h-5 w-5 shrink-0 accent-primary"
+                    checked={value.is_active ?? true}
+                    onChange={(e) =>
+                      onChange({ ...value, is_active: e.target.checked })
+                    }
+                  />
+                </label>
+                <label className="flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-border bg-card p-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold">Livraison offerte</p>
+                    <p className="text-xs text-muted-foreground">
+                      Affiche un badge livraison gratuite
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    className="h-5 w-5 shrink-0 accent-primary"
+                    checked={value.free_shipping ?? false}
+                    onChange={(e) =>
+                      onChange({ ...value, free_shipping: e.target.checked })
+                    }
+                  />
+                </label>
+              </div>
+            </div>
+          </Section>
         </div>
 
-        <div className="mt-6 flex justify-end gap-2">
+        <div className="flex items-center justify-end gap-2 border-t border-border bg-background px-5 py-4 md:px-6">
           <button
             onClick={onClose}
-            className="rounded-full border border-border px-5 py-2.5 text-sm font-semibold"
+            className="rounded-full border border-border px-5 py-2.5 text-sm font-semibold hover:bg-muted"
           >
             Annuler
           </button>
           <button
             onClick={onSubmit}
-            className="rounded-full bg-gradient-hero px-5 py-2.5 text-sm font-bold text-primary-foreground shadow-soft"
+            className="rounded-full bg-gradient-hero px-6 py-2.5 text-sm font-bold text-primary-foreground shadow-soft hover:opacity-95"
           >
             Enregistrer
           </button>
         </div>
       </div>
     </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="mb-6 last:mb-0">
+      <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+        {title}
+      </h4>
+      {children}
+    </section>
   );
 }
 
