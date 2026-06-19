@@ -107,6 +107,9 @@ export const adminUploadImage = createServerFn({ method: "POST" })
       .from("product-images")
       .upload(path, bytes, { contentType: data.contentType, upsert: false });
     if (error) throw new Error(error.message);
-    const { data: pub } = sb.storage.from("product-images").getPublicUrl(path);
-    return { url: pub.publicUrl };
+    const { data: signed, error: signErr } = await sb.storage
+      .from("product-images")
+      .createSignedUrl(path, 60 * 60 * 24 * 365 * 10); // 10 years
+    if (signErr) throw new Error(signErr.message);
+    return { url: signed.signedUrl };
   });
