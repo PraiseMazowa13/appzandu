@@ -22,11 +22,14 @@ export const Route = createFileRoute("/catalogue")({
   component: CataloguePage,
 });
 
+type SortKey = "featured" | "price_asc" | "price_desc" | "promo";
+
 function CataloguePage() {
   const { data: products } = useSuspenseQuery(productsQO);
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<string>("all");
-  const [maxPrice, setMaxPrice] = useState<number>(0);
+  const [maxPrice, setMaxPrice] = useState<number | null>(null);
+  const [sort, setSort] = useState<SortKey>("featured");
 
   const categories = useMemo(
     () =>
@@ -40,15 +43,29 @@ function CataloguePage() {
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    const pmax = maxPrice > 0 ? maxPrice : priceMax;
-    return products.filter((p) => {
+    const pmax = maxPrice ?? priceMax;
+    const list = products.filter((p) => {
       if (cat !== "all" && p.category !== cat) return false;
       if (p.price_cents > pmax) return false;
       if (needle && !`${p.name} ${p.description ?? ""}`.toLowerCase().includes(needle))
         return false;
       return true;
     });
-  }, [products, q, cat, maxPrice, priceMax]);
+    switch (sort) {
+      case "price_asc":
+        return [...list].sort((a, b) => a.price_cents - b.price_cents);
+      case "price_desc":
+        return [...list].sort((a, b) => b.price_cents - a.price_cents);
+      case "promo":
+        return [...list].sort((a, b) => {
+          const ap = a.compare_at_price_cents && a.compare_at_price_cents > a.price_cents ? 1 : 0;
+          const bp = b.compare_at_price_cents && b.compare_at_price_cents > b.price_cents ? 1 : 0;
+          return bp - ap;
+        });
+      default:
+        return list;
+    }
+  }, [products, q, cat, maxPrice, priceMax, sort]);
 
   return (
     <SiteShell>
@@ -61,41 +78,54 @@ function CataloguePage() {
           </p>
         </div>
 
-        <div className="mb-6 grid gap-3 rounded-3xl border border-border bg-card p-4 shadow-card md:grid-cols-[1fr_auto_auto] md:gap-4 md:p-5">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Rechercher un produit..."
-              className="h-11 w-full rounded-full border border-border bg-background pl-10 pr-4 text-sm outline-none focus:border-primary"
-            />
+        <div className="mb-6 rounded-3xl border border-border bg-card p-4 shadow-card md:p-5">
+          <div className="grid gap-3 md:grid-cols-[1fr_auto_auto]">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Rechercher un produit..."
+                className="h-11 w-full rounded-full border border-border bg-background pl-10 pr-4 text-sm outline-none focus:border-primary"
+              />
+            </div>
+            <select
+              value={cat}
+              onChange={(e) => setCat(e.target.value)}
+              className="h-11 rounded-full border border-border bg-background px-4 text-sm outline-none focus:border-primary"
+            >
+              <option value="all">Toutes catégories</option>
+              {categories.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as SortKey)}
+              className="h-11 rounded-full border border-border bg-background px-4 text-sm outline-none focus:border-primary"
+            >
+              <option value="featured">Tri : recommandés</option>
+              <option value="price_asc">Prix croissant</option>
+              <option value="price_desc">Prix décroissant</option>
+              <option value="promo">Promotions d'abord</option>
+            </select>
           </div>
-          <select
-            value={cat}
-            onChange={(e) => setCat(e.target.value)}
-            className="h-11 rounded-full border border-border bg-background px-4 text-sm outline-none focus:border-primary"
-          >
-            <option value="all">Toutes catégories</option>
-            {categories.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-          <div className="flex items-center gap-3 rounded-full border border-border bg-background px-4">
-            <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
+          <div className="mt-3 flex items-center gap-3 rounded-full border border-border bg-background px-4 py-2">
+            <SlidersHorizontal className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <span className="shrink-0 text-xs font-semibold text-muted-foreground">Prix max</span>
             <input
               type="range"
               min={0}
               max={priceMax}
               step={1000}
-              value={maxPrice || priceMax}
+              value={maxPrice ?? priceMax}
               onChange={(e) => setMaxPrice(Number(e.target.value))}
-              className="h-11 w-32 accent-primary"
+              className="min-w-0 flex-1 accent-primary"
             />
-            <span className="whitespace-nowrap text-xs font-semibold tabular-nums">
-              ≤ {(maxPrice || priceMax).toLocaleString("fr-FR")} FC
+            <span className="shrink-0 whitespace-nowrap text-xs font-semibold tabular-nums">
+              ≤ {(maxPrice ?? priceMax).toLocaleString("fr-FR")} FC
             </span>
           </div>
         </div>

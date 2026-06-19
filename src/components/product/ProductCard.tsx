@@ -38,6 +38,13 @@ export function ProductCard({ product }: { product: ProductCardData }) {
   const outOfStock = product.stock <= 0;
   const hasPromo =
     product.compare_at_price_cents && product.compare_at_price_cents > product.price_cents;
+  const discountPct = hasPromo
+    ? Math.round(
+        ((product.compare_at_price_cents! - product.price_cents) /
+          product.compare_at_price_cents!) *
+          100,
+      )
+    : 0;
 
   return (
     <motion.article
@@ -76,6 +83,11 @@ export function ProductCard({ product }: { product: ProductCardData }) {
             </span>
           )}
         </div>
+        {hasPromo && discountPct >= 5 && (
+          <span className="absolute right-3 top-3 inline-flex items-center justify-center rounded-full bg-primary px-2.5 py-1 text-[11px] font-black text-primary-foreground shadow-soft">
+            -{discountPct}%
+          </span>
+        )}
       </Link>
 
       <div className="flex flex-1 flex-col gap-3 p-4">
