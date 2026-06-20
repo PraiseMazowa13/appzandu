@@ -56,9 +56,31 @@ function CommandePage() {
       `📦 *Articles*\n${lines}\n\n` +
       `💰 *Total : ${formatPrice(totalCents())}*\n\n` +
       `💳 Paiement Mobile Money : ${MOBILE_MONEY}`;
+
+    // Enregistrement local pour le tableau de bord admin
+    try {
+      const order = {
+        id: (crypto as any)?.randomUUID?.() ?? `o_${Date.now()}`,
+        createdAt: Date.now(),
+        customer: parsed.data,
+        items: items.map((i) => ({
+          id: i.id,
+          name: i.name,
+          price_cents: i.price_cents,
+          quantity: i.quantity,
+        })),
+        total_cents: totalCents(),
+        status: "pending" as const,
+      };
+      const raw = localStorage.getItem("zandu-orders");
+      const list = raw ? JSON.parse(raw) : [];
+      list.unshift(order);
+      localStorage.setItem("zandu-orders", JSON.stringify(list.slice(0, 300)));
+    } catch {}
+
     const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
     window.open(url, "_blank", "noopener,noreferrer");
-    toast.success("Redirection vers WhatsApp...");
+    toast.success("Commande envoyée via WhatsApp");
   };
 
   return (
