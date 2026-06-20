@@ -243,108 +243,133 @@ function Dashboard({
     }
   };
 
+  const [tab, setTab] = useState<"sales" | "products">("sales");
+
   return (
     <SiteShell>
       <div className="mx-auto max-w-6xl px-4 py-8 md:px-8 md:py-12">
-        <div className="flex items-start justify-between gap-4">
-          <div>
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
+          <div className="min-w-0">
             <h1 className="font-display text-3xl font-black md:text-4xl">Tableau de bord</h1>
             <p className="mt-1 text-sm text-muted-foreground">Gérez votre boutique Zandu</p>
           </div>
           <button
             onClick={onLogout}
-            className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-xs font-semibold hover:bg-muted"
+            className="shrink-0 inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-xs font-semibold hover:bg-muted"
           >
-            <LogOut className="h-3.5 w-3.5" /> Déconnexion
+            <LogOut className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Déconnexion</span>
           </button>
         </div>
 
-        <div className="mt-6 grid grid-cols-3 gap-3 md:gap-5">
-          <StatCard icon={Package} label="Produits" value={stats.total} tint="primary" />
-          <StatCard icon={Tag} label="En promo" value={stats.promo} tint="emerald" />
-          <StatCard icon={AlertCircle} label="Rupture" value={stats.out} tint="destructive" />
+        <div className="mt-6 inline-flex rounded-full bg-muted p-1">
+          {(["sales", "products"] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`rounded-full px-5 py-2 text-xs font-bold transition ${
+                tab === t
+                  ? "bg-background text-foreground shadow-card"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {t === "sales" ? "📊 Ventes" : "📦 Produits"}
+            </button>
+          ))}
         </div>
 
-        <div className="mt-8 flex items-center justify-between gap-3">
-          <h2 className="font-display text-xl font-black">Produits ({items.length})</h2>
-          <button
-            onClick={startCreate}
-            className="inline-flex items-center gap-2 rounded-full bg-gradient-hero px-4 py-2.5 text-xs font-bold text-primary-foreground shadow-soft"
-          >
-            <Plus className="h-3.5 w-3.5" /> Ajouter un produit
-          </button>
-        </div>
+        {tab === "sales" ? (
+          <SalesPanel productCount={stats.total} promoCount={stats.promo} outCount={stats.out} />
+        ) : (
+          <>
+            <div className="mt-6 grid grid-cols-3 gap-3 md:gap-5">
+              <StatCard icon={Package} label="Produits" value={stats.total} tint="primary" />
+              <StatCard icon={Tag} label="En promo" value={stats.promo} tint="emerald" />
+              <StatCard icon={AlertCircle} label="Rupture" value={stats.out} tint="destructive" />
+            </div>
 
-        <div className="mt-4 overflow-hidden rounded-3xl border border-border bg-card shadow-card">
-          {items.length === 0 ? (
-            <p className="p-10 text-center text-sm text-muted-foreground">Aucun produit.</p>
-          ) : (
-            <ul className="divide-y divide-border">
-              {items.map((p) => (
-                <li key={p.id} className="flex items-center gap-3 p-3 md:gap-4 md:p-4">
-                  <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-2xl bg-gradient-soft">
-                    {p.image_url ? (
-                      <img src={p.image_url} alt={p.name} className="h-full w-full object-cover" />
-                    ) : (
-                      <span className="text-xl font-bold text-primary/40">{p.name.charAt(0)}</span>
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="truncate font-semibold">{p.name}</h3>
-                      {p.badge && (
-                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase text-primary">
-                          {p.badge}
-                        </span>
-                      )}
-                      {!p.is_active && (
-                        <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold uppercase text-muted-foreground">
-                          Désactivé
-                        </span>
-                      )}
-                    </div>
-                    <div className="mt-0.5 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-xs">
-                      <span className="font-display font-bold">{formatPrice(p.price_cents)}</span>
-                      {p.compare_at_price_cents && p.compare_at_price_cents > p.price_cents && (
-                        <span className="text-muted-foreground line-through">
-                          {formatPrice(p.compare_at_price_cents)}
-                        </span>
-                      )}
-                      <span className="text-muted-foreground">Stock : {p.stock}</span>
-                      {p.category && <span className="text-muted-foreground">· {p.category}</span>}
-                    </div>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-1">
-                    <button
-                      onClick={() => startEdit(p)}
-                      className="grid h-9 w-9 place-items-center rounded-full bg-muted hover:bg-muted/70"
-                      aria-label="Modifier"
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      onClick={async () => {
-                        if (!confirm(`Supprimer "${p.name}" ?`)) return;
-                        try {
-                          await del({ data: { ...creds, id: p.id } });
-                          toast.success("Supprimé");
-                          refresh();
-                        } catch (e: any) {
-                          toast.error(e?.message ?? "Erreur");
-                        }
-                      }}
-                      className="grid h-9 w-9 place-items-center rounded-full bg-muted hover:bg-destructive hover:text-destructive-foreground"
-                      aria-label="Supprimer"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+            <div className="mt-8 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+              <h2 className="min-w-0 truncate font-display text-xl font-black">Produits ({items.length})</h2>
+              <button
+                onClick={startCreate}
+                className="shrink-0 inline-flex items-center gap-2 rounded-full bg-gradient-hero px-4 py-2.5 text-xs font-bold text-primary-foreground shadow-soft"
+              >
+                <Plus className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Ajouter un produit</span><span className="sm:hidden">Ajouter</span>
+              </button>
+            </div>
+
+            <div className="mt-4 overflow-hidden rounded-3xl border border-border bg-card shadow-card">
+              {items.length === 0 ? (
+                <p className="p-10 text-center text-sm text-muted-foreground">Aucun produit.</p>
+              ) : (
+                <ul className="divide-y divide-border">
+                  {items.map((p) => (
+                    <li key={p.id} className="flex items-center gap-3 p-3 md:gap-4 md:p-4">
+                      <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-2xl bg-gradient-soft">
+                        {p.image_url ? (
+                          <img src={p.image_url} alt={p.name} className="h-full w-full object-cover" />
+                        ) : (
+                          <span className="text-xl font-bold text-primary/40">{p.name.charAt(0)}</span>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="truncate font-semibold">{p.name}</h3>
+                          {p.badge && (
+                            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase text-primary">
+                              {p.badge}
+                            </span>
+                          )}
+                          {!p.is_active && (
+                            <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold uppercase text-muted-foreground">
+                              Désactivé
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-0.5 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-xs">
+                          <span className="font-display font-bold">{formatPrice(p.price_cents)}</span>
+                          {p.compare_at_price_cents && p.compare_at_price_cents > p.price_cents && (
+                            <span className="text-muted-foreground line-through">
+                              {formatPrice(p.compare_at_price_cents)}
+                            </span>
+                          )}
+                          <span className="text-muted-foreground">Stock : {p.stock}</span>
+                          {p.category && <span className="text-muted-foreground">· {p.category}</span>}
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-1">
+                        <button
+                          onClick={() => startEdit(p)}
+                          className="grid h-9 w-9 place-items-center rounded-full bg-muted hover:bg-muted/70"
+                          aria-label="Modifier"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (!confirm(`Supprimer "${p.name}" ?`)) return;
+                            try {
+                              await del({ data: { ...creds, id: p.id } });
+                              toast.success("Supprimé");
+                              refresh();
+                            } catch (e: any) {
+                              toast.error(e?.message ?? "Erreur");
+                            }
+                          }}
+                          className="grid h-9 w-9 place-items-center rounded-full bg-muted hover:bg-destructive hover:text-destructive-foreground"
+                          aria-label="Supprimer"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </>
+        )}
       </div>
+
 
       {showForm && editing && (
         <ProductForm
