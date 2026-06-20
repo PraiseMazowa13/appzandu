@@ -788,3 +788,261 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </label>
   );
 }
+
+type StoredOrder = {
+  id: string;
+  createdAt: number;
+  customer: { name: string; phone: string; address: string; city: string };
+  items: { id: string; name: string; price_cents: number; quantity: number }[];
+  total_cents: number;
+  status: "pending" | "confirmed";
+};
+
+const ORDERS_KEY = "zandu-orders";
+
+function SalesPanel({
+  productCount,
+  promoCount,
+  outCount,
+}: {
+  productCount: number;
+  promoCount: number;
+  outCount: number;
+}) {
+  const [orders, setOrders] = useState<StoredOrder[]>([]);
+  const [range, setRange] = useState<"today" | "7d" | "30d" | "all">("7d");
+
+  const load = () => {
+    try {
+      const raw = localStorage.getItem(ORDERS_KEY);
+      setOrders(raw ? (JSON.parse(raw) as StoredOrder[]) : []);
+    } catch {
+      setOrders([]);
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const persist = (next: StoredOrder[]) => {
+    setOrders(next);
+    try {
+      localStorage.setItem(ORDERS_KEY, JSON.stringify(next));
+    } catch {}
+  };
+
+  const now = Date.now();
+  const cutoff =
+    range === "today"
+      ? now - 24 * 3600 * 1000
+      : range === "7d"
+        ? now - 7 * 24 * 3600 * 1000
+        : range === "30d"
+          ? now - 30 * 24 * 3600 * 1000
+          : 0;
+  const visible = orders.filter((o) => o.createdAt >= cutoff);
+
+  const totalRevenue = visible.reduce((s, o) => s + o.total_cents, 0);
+  const totalItems = visible.reduce(
+    (s, o) => s + o.items.reduce((n, i) => n + i.quantity, 0),
+    0,
+  );
+  const avgBasket = visible.length ? Math.round(totalRevenue / visible.length) : 0;
+
+  const topProducts = useMemo(() => {
+    const map = new Map<string, { name: string; qty: number; revenue: number }>();
+    for (const o of visible) {
+      for (const it of o.items) {
+        const cur = map.get(it.id) ?? { name: it.name, qty: 0, revenue: 0 };
+        cur.qty += it.quantity;
+        cur.revenue += it.quantity * it.price_cents;
+        map.set(it.id, cur);
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => b.qty - a.qty).slice(0, 5);
+  }, [visible]);
+
+  return (
+    <div className="mt-6 space-y-6">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
+        <StatCard icon={TrendingUp} label="Chiffre d'affaires" value={Math.round(totalRevenue / 100)} tint="emerald" />
+        <StatCard icon={ShoppingCart} label="Commandes" value={visible.length} tint="primary" />
+        <StatCard icon={Package} label="Articles vendus" value={totalItems} tint="primary" />
+        <StatCard icon={Tag} label="Panier moyen" value={Math.round(avgBasket / 100)} tint="emerald" />
+      </div>
+
+      <div className="grid grid-cols-3 gap-3 md:hidden">
+        <StatCard icon={Package} label="Produits" value={productCount} tint="primary" />
+        <StatCard icon={Tag} label="Promos" value={promoCount} tint="emerald" />
+        <StatCard icon={AlertCircle} label="Rupture" value={outCount} tint="destructive" />
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="inline-flex rounded-full bg-muted p-1">
+          {(
+            [
+              ["today", "Aujourd'hui"],
+              ["7d", "7 jours"],
+              ["30d", "30 jours"],
+              ["all", "Tout"],
+            ] as const
+          ).map(([v, l]) => (
+            <button
+              key={v}
+              onClick={() => setRange(v)}
+              className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition ${
+                range === v
+                  ? "bg-background text-foreground shadow-card"
+                  : "text-muted-foreground"
+              }`}
+            >
+              {l}
+            </button>
+          ))}
+        </div>
+        {orders.length > 0 && (
+          <button
+            onClick={() => {
+              if (!confirm("Effacer l'historique local des ventes ?")) return;
+              persist([]);
+              toast.success("Historique effacé");
+            }}
+            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold hover:bg-muted"
+          >
+            <Trash className="h-3 w-3" /> Vider l'historique
+          </button>
+        )}
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
+        <div className="rounded-3xl border border-border bg-card shadow-card">
+          <div className="border-b border-border px-5 py-4">
+            <h3 className="font-display text-base font-black">Commandes récentes</h3>
+            <p className="text-xs text-muted-foreground">
+              {visible.length} commande{visible.length > 1 ? "s" : ""} sur la période
+            </p>
+          </div>
+          {visible.length === 0 ? (
+            <div className="p-10 text-center text-sm text-muted-foreground">
+              Aucune commande enregistrée sur cette période.
+            </div>
+          ) : (
+            <ul className="divide-y divide-border">
+              {visible.map((o) => (
+                <li key={o.id} className="p-4">
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-semibold truncate">{o.customer.name}</span>
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                            o.status === "confirmed"
+                              ? "bg-emerald-100 text-emerald-700"
+                              : "bg-amber-100 text-amber-700"
+                          }`}
+                        >
+                          {o.status === "confirmed" ? (
+                            <><Check className="h-3 w-3" /> Confirmé</>
+                          ) : (
+                            <><Clock className="h-3 w-3" /> En attente</>
+                          )}
+                        </span>
+                      </div>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        📞 {o.customer.phone} · 📍 {o.customer.city}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {new Date(o.createdAt).toLocaleString("fr-FR")}
+                      </p>
+                      <ul className="mt-2 space-y-0.5 text-xs">
+                        {o.items.map((it) => (
+                          <li key={it.id} className="text-muted-foreground">
+                            • {it.name} × {it.quantity}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="flex flex-col items-end gap-2 shrink-0">
+                      <span className="font-display text-base font-black">
+                        {formatPrice(o.total_cents)}
+                      </span>
+                      <div className="flex gap-1">
+                        {o.status === "pending" && (
+                          <button
+                            onClick={() => {
+                              persist(
+                                orders.map((x) =>
+                                  x.id === o.id ? { ...x, status: "confirmed" } : x,
+                                ),
+                              );
+                              toast.success("Commande confirmée");
+                            }}
+                            className="grid h-8 w-8 place-items-center rounded-full bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+                            aria-label="Confirmer"
+                          >
+                            <Check className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                        <a
+                          href={`https://wa.me/${o.customer.phone.replace(/\D/g, "")}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="grid h-8 w-8 place-items-center rounded-full bg-muted text-muted-foreground hover:bg-muted/70"
+                          aria-label="WhatsApp"
+                        >
+                          💬
+                        </a>
+                        <button
+                          onClick={() => {
+                            if (!confirm("Supprimer cette commande ?")) return;
+                            persist(orders.filter((x) => x.id !== o.id));
+                          }}
+                          className="grid h-8 w-8 place-items-center rounded-full bg-muted text-muted-foreground hover:bg-destructive hover:text-destructive-foreground"
+                          aria-label="Supprimer"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="rounded-3xl border border-border bg-card p-5 shadow-card">
+          <h3 className="font-display text-base font-black">Top produits</h3>
+          <p className="text-xs text-muted-foreground">Les plus vendus sur la période</p>
+          {topProducts.length === 0 ? (
+            <p className="mt-6 text-center text-xs text-muted-foreground">
+              Pas encore de ventes
+            </p>
+          ) : (
+            <ul className="mt-4 space-y-3">
+              {topProducts.map((p, i) => (
+                <li key={p.name} className="flex items-center gap-3">
+                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-black text-primary">
+                    {i + 1}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold">{p.name}</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {p.qty} vendus · {formatPrice(p.revenue)}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <div className="mt-6 rounded-2xl bg-muted/60 p-3 text-[11px] text-muted-foreground">
+            💡 Les ventes sont enregistrées localement sur cet appareil lorsque les
+            clients valident leur commande via WhatsApp.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
