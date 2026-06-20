@@ -143,7 +143,7 @@ function HomePage() {
               Aucun produit pour le moment. Ajoutez-en depuis l'administration.
             </p>
           ) : (
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:gap-4 lg:grid-cols-4 xl:grid-cols-5">
               {featured.map((p) => (
                 <ProductCard key={p.id} product={p as any} />
               ))}
