@@ -245,13 +245,112 @@ function Dashboard({
 
   const [tab, setTab] = useState<"sales" | "products">("sales");
   const [search, setSearch] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [showCats, setShowCats] = useState(false);
+  const [catFilter, setCatFilter] = useState<string>("all");
+  const [promoFilter, setPromoFilter] = useState<"all" | "promo" | "regular">("all");
+  const [stockFilter, setStockFilter] = useState<"all" | "in" | "low" | "out">("all");
+  const [sortBy, setSortBy] = useState<
+    "recent" | "name" | "price_asc" | "price_desc" | "stock_asc" | "stock_desc" | "discount"
+  >("recent");
+
+  const categories = useMemo(() => {
+    const set = new Map<string, number>();
+    for (const p of items) {
+      const c = (p.category ?? "").trim();
+      if (!c) continue;
+      set.set(c, (set.get(c) ?? 0) + 1);
+    }
+    return Array.from(set.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [items]);
+
+  const activeFiltersCount =
+    (catFilter !== "all" ? 1 : 0) +
+    (promoFilter !== "all" ? 1 : 0) +
+    (stockFilter !== "all" ? 1 : 0) +
+    (sortBy !== "recent" ? 1 : 0);
+
   const filteredItems = useMemo(() => {
     const n = search.trim().toLowerCase();
-    if (!n) return items;
-    return items.filter((p) =>
-      `${p.name} ${p.category ?? ""} ${p.badge ?? ""}`.toLowerCase().includes(n),
-    );
-  }, [items, search]);
+    let out = items.filter((p) => {
+      if (n && !`${p.name} ${p.category ?? ""} ${p.badge ?? ""}`.toLowerCase().includes(n))
+        return false;
+      if (catFilter !== "all" && (p.category ?? "") !== catFilter) return false;
+      const isPromo =
+        !!p.compare_at_price_cents && p.compare_at_price_cents > p.price_cents;
+      if (promoFilter === "promo" && !isPromo) return false;
+      if (promoFilter === "regular" && isPromo) return false;
+      if (stockFilter === "out" && p.stock > 0) return false;
+      if (stockFilter === "in" && p.stock <= 0) return false;
+      if (stockFilter === "low" && (p.stock <= 0 || p.stock > 5)) return false;
+      return true;
+    });
+    const disc = (p: AdminProduct) =>
+      p.compare_at_price_cents && p.compare_at_price_cents > p.price_cents
+        ? (p.compare_at_price_cents - p.price_cents) / p.compare_at_price_cents
+        : 0;
+    out = [...out].sort((a, b) => {
+      switch (sortBy) {
+        case "name":
+          return a.name.localeCompare(b.name);
+        case "price_asc":
+          return a.price_cents - b.price_cents;
+        case "price_desc":
+          return b.price_cents - a.price_cents;
+        case "stock_asc":
+          return a.stock - b.stock;
+        case "stock_desc":
+          return b.stock - a.stock;
+        case "discount":
+          return disc(b) - disc(a);
+        default:
+          return 0;
+      }
+    });
+    return out;
+  }, [items, search, catFilter, promoFilter, stockFilter, sortBy]);
+
+  const resetFilters = () => {
+    setCatFilter("all");
+    setPromoFilter("all");
+    setStockFilter("all");
+    setSortBy("recent");
+  };
+
+  const renameCategory = async (oldName: string, newName: string) => {
+    const target = newName.trim();
+    if (!target || target === oldName) return;
+    const affected = items.filter((p) => (p.category ?? "") === oldName);
+    try {
+      await Promise.all(
+        affected.map((p) =>
+          update({ data: { ...creds, id: p.id, product: { category: target } } }),
+        ),
+      );
+      toast.success(`Catégorie renommée (${affected.length} produit${affected.length > 1 ? "s" : ""})`);
+      if (catFilter === oldName) setCatFilter(target);
+      refresh();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erreur");
+    }
+  };
+
+  const deleteCategory = async (name: string) => {
+    const affected = items.filter((p) => (p.category ?? "") === name);
+    if (!confirm(`Retirer la catégorie "${name}" de ${affected.length} produit(s) ?`)) return;
+    try {
+      await Promise.all(
+        affected.map((p) =>
+          update({ data: { ...creds, id: p.id, product: { category: null } } }),
+        ),
+      );
+      toast.success("Catégorie supprimée");
+      if (catFilter === name) setCatFilter("all");
+      refresh();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erreur");
+    }
+  };
 
   return (
     <SiteShell>
