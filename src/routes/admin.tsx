@@ -629,6 +629,15 @@ function Dashboard({
           onUpload={handleFile}
         />
       )}
+
+      {showCats && (
+        <CategoryManager
+          categories={categories}
+          onClose={() => setShowCats(false)}
+          onRename={renameCategory}
+          onDelete={deleteCategory}
+        />
+      )}
     </SiteShell>
   );
 }
