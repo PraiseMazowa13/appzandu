@@ -296,7 +296,7 @@ function Dashboard({
             </div>
 
             <div className="mt-8 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-              <h2 className="min-w-0 truncate font-display text-xl font-black">Produits ({items.length})</h2>
+              <h2 className="min-w-0 truncate font-display text-xl font-black">Produits ({filteredItems.length}{search ? `/${items.length}` : ""})</h2>
               <button
                 onClick={startCreate}
                 className="shrink-0 inline-flex items-center gap-2 rounded-full bg-gradient-hero px-4 py-2.5 text-xs font-bold text-primary-foreground shadow-soft"
@@ -305,12 +305,33 @@ function Dashboard({
               </button>
             </div>
 
+            <div className="relative mt-3">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Rechercher un produit, catégorie, badge..."
+                className="h-11 w-full rounded-full border border-border bg-card pl-10 pr-10 text-sm outline-none focus:border-primary"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch("")}
+                  className="absolute right-2 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-muted text-xs hover:bg-muted/70"
+                  aria-label="Effacer"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
             <div className="mt-4 overflow-hidden rounded-3xl border border-border bg-card shadow-card">
-              {items.length === 0 ? (
-                <p className="p-10 text-center text-sm text-muted-foreground">Aucun produit.</p>
+              {filteredItems.length === 0 ? (
+                <p className="p-10 text-center text-sm text-muted-foreground">
+                  {search ? "Aucun produit ne correspond à votre recherche." : "Aucun produit."}
+                </p>
               ) : (
                 <ul className="divide-y divide-border">
-                  {items.map((p) => (
+                  {filteredItems.map((p) => (
                     <li key={p.id} className="flex items-center gap-3 p-3 md:gap-4 md:p-4">
                       <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-2xl bg-gradient-soft">
                         {p.image_url ? (
