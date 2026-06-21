@@ -153,27 +153,29 @@ function HomePage() {
       </section>
 
       {/* ADVANTAGES */}
-      <section className="bg-card/40 px-4 py-14 md:px-8 md:py-20">
+      <section className="bg-card/40 px-4 py-10 md:px-8 md:py-14">
         <div className="mx-auto max-w-6xl">
-          <h2 className="text-center font-display text-2xl font-black md:text-3xl">
+          <h2 className="text-center font-display text-xl font-black md:text-2xl">
             Pourquoi choisir Zandu ?
           </h2>
-          <div className="mt-10 grid grid-cols-2 gap-4 md:grid-cols-4">
+          <div className="mt-6 grid grid-cols-2 gap-2.5 md:grid-cols-4 md:gap-4">
             {[
               { icon: Truck, label: "Livraison rapide", desc: "Partout en RDC" },
               { icon: ShieldCheck, label: "Paiement sécurisé", desc: "100% protégé" },
               { icon: Smartphone, label: "Mobile Money", desc: "Orange, Airtel, M-Pesa" },
-              { icon: Star, label: "Produits de qualité", desc: "Sélection vérifiée" },
+              { icon: Star, label: "Qualité vérifiée", desc: "Sélection triée" },
             ].map(({ icon: Icon, label, desc }) => (
               <div
                 key={label}
-                className="rounded-3xl border border-border bg-card p-5 text-center shadow-card md:p-6"
+                className="flex items-center gap-2.5 rounded-2xl border border-border bg-card p-3 shadow-card md:flex-col md:gap-2 md:p-4 md:text-center"
               >
-                <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-gradient-hero text-primary-foreground shadow-soft">
-                  <Icon className="h-5 w-5" />
+                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-hero text-primary-foreground shadow-soft md:h-10 md:w-10">
+                  <Icon className="h-4 w-4" />
                 </div>
-                <h3 className="mt-4 font-display text-sm font-bold md:text-base">{label}</h3>
-                <p className="mt-1 text-xs text-muted-foreground">{desc}</p>
+                <div className="min-w-0">
+                  <h3 className="font-display text-xs font-bold md:text-sm">{label}</h3>
+                  <p className="text-[10px] text-muted-foreground md:text-xs">{desc}</p>
+                </div>
               </div>
             ))}
           </div>
