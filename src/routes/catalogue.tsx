@@ -74,6 +74,29 @@ function CataloguePage() {
     }
   }, [products, q, cat, maxPrice, priceMax, sort]);
 
+  // Reset pagination when filters change
+  useEffect(() => {
+    setVisible(PAGE_SIZE);
+  }, [q, cat, maxPrice, sort]);
+
+  // Infinite scroll via IntersectionObserver
+  useEffect(() => {
+    if (!sentinelRef.current) return;
+    const el = sentinelRef.current;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisible((v) => Math.min(v + PAGE_SIZE, filtered.length));
+        }
+      },
+      { rootMargin: "400px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [filtered.length]);
+
+  const shown = filtered.slice(0, visible);
+
   const reset = () => {
     setCat("all");
     setMaxPrice(null);
