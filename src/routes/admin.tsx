@@ -1301,3 +1301,119 @@ function SalesPanel({
     </div>
   );
 }
+
+function FilterGroup({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </p>
+      {children}
+    </div>
+  );
+}
+
+function CategoryManager({
+  categories,
+  onClose,
+  onRename,
+  onDelete,
+}: {
+  categories: [string, number][];
+  onClose: () => void;
+  onRename: (oldName: string, newName: string) => Promise<void> | void;
+  onDelete: (name: string) => Promise<void> | void;
+}) {
+  const [editing, setEditing] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/40 backdrop-blur-sm md:items-center md:p-6">
+      <div className="flex max-h-[90vh] w-full max-w-lg flex-col rounded-t-3xl bg-background shadow-float md:rounded-3xl">
+        <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
+          <div className="min-w-0">
+            <h3 className="font-display text-lg font-black">Gérer les catégories</h3>
+            <p className="text-xs text-muted-foreground">
+              Renommez ou supprimez les catégories existantes
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-full bg-muted px-3 py-1.5 text-xs font-semibold hover:bg-muted/70"
+          >
+            Fermer
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto px-5 py-5">
+          {categories.length === 0 ? (
+            <p className="py-10 text-center text-sm text-muted-foreground">
+              Aucune catégorie pour l'instant. Ajoutez-en via le formulaire produit.
+            </p>
+          ) : (
+            <ul className="divide-y divide-border rounded-2xl border border-border bg-card">
+              {categories.map(([name, count]) => (
+                <li key={name} className="flex items-center gap-2 p-3">
+                  {editing === name ? (
+                    <>
+                      <input
+                        autoFocus
+                        value={draft}
+                        onChange={(e) => setDraft(e.target.value)}
+                        className="h-9 flex-1 rounded-full border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+                      />
+                      <button
+                        onClick={async () => {
+                          await onRename(name, draft);
+                          setEditing(null);
+                        }}
+                        className="rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground"
+                      >
+                        OK
+                      </button>
+                      <button
+                        onClick={() => setEditing(null)}
+                        className="rounded-full bg-muted px-3 py-1.5 text-xs font-semibold"
+                      >
+                        ✕
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-semibold">{name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {count} produit{count > 1 ? "s" : ""}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setEditing(name);
+                          setDraft(name);
+                        }}
+                        className="grid h-9 w-9 place-items-center rounded-full bg-muted hover:bg-muted/70"
+                        aria-label="Renommer"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => onDelete(name)}
+                        className="grid h-9 w-9 place-items-center rounded-full bg-muted hover:bg-destructive hover:text-destructive-foreground"
+                        aria-label="Supprimer"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="mt-4 text-xs text-muted-foreground">
+            Astuce : pour créer une nouvelle catégorie, saisissez-la directement dans le champ
+            « Catégorie » du formulaire produit.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
