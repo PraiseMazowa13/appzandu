@@ -404,24 +404,142 @@ function Dashboard({
               </button>
             </div>
 
-            <div className="relative mt-3">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Rechercher un produit, catégorie, badge..."
-                className="h-11 w-full rounded-full border border-border bg-card pl-10 pr-10 text-sm outline-none focus:border-primary"
-              />
-              {search && (
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+              <div className="relative flex-1">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Rechercher un produit, catégorie, badge..."
+                  className="h-11 w-full rounded-full border border-border bg-card pl-10 pr-10 text-sm outline-none focus:border-primary"
+                />
+                {search && (
+                  <button
+                    onClick={() => setSearch("")}
+                    className="absolute right-2 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-muted text-xs hover:bg-muted/70"
+                    aria-label="Effacer"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+              <div className="flex gap-2">
                 <button
-                  onClick={() => setSearch("")}
-                  className="absolute right-2 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-muted text-xs hover:bg-muted/70"
-                  aria-label="Effacer"
+                  onClick={() => setShowFilters((v) => !v)}
+                  className={`relative inline-flex h-11 items-center gap-2 rounded-full border px-4 text-xs font-semibold transition ${
+                    showFilters || activeFiltersCount > 0
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border bg-card hover:bg-muted"
+                  }`}
                 >
-                  ✕
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                  Filtres
+                  {activeFiltersCount > 0 && (
+                    <span className="grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
+                      {activeFiltersCount}
+                    </span>
+                  )}
                 </button>
-              )}
+                <button
+                  onClick={() => setShowCats(true)}
+                  className="inline-flex h-11 items-center gap-2 rounded-full border border-border bg-card px-4 text-xs font-semibold hover:bg-muted"
+                >
+                  <FolderTree className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Catégories</span>
+                </button>
+              </div>
             </div>
+
+            {showFilters && (
+              <div className="mt-3 rounded-3xl border border-border bg-card p-4 shadow-card">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                  <FilterGroup label="Catégorie">
+                    <select
+                      value={catFilter}
+                      onChange={(e) => setCatFilter(e.target.value)}
+                      className="h-10 w-full rounded-full border border-border bg-background px-3 text-xs font-semibold outline-none focus:border-primary"
+                    >
+                      <option value="all">Toutes</option>
+                      {categories.map(([c, n]) => (
+                        <option key={c} value={c}>
+                          {c} ({n})
+                        </option>
+                      ))}
+                    </select>
+                  </FilterGroup>
+                  <FilterGroup label="Promotion">
+                    <div className="grid grid-cols-3 gap-1 rounded-full bg-muted p-1">
+                      {(
+                        [
+                          ["all", "Toutes"],
+                          ["promo", "En promo"],
+                          ["regular", "Sans"],
+                        ] as const
+                      ).map(([v, l]) => (
+                        <button
+                          key={v}
+                          onClick={() => setPromoFilter(v)}
+                          className={`rounded-full px-2 py-1.5 text-[11px] font-semibold transition ${
+                            promoFilter === v
+                              ? "bg-background text-foreground shadow-card"
+                              : "text-muted-foreground"
+                          }`}
+                        >
+                          {l}
+                        </button>
+                      ))}
+                    </div>
+                  </FilterGroup>
+                  <FilterGroup label="Stock">
+                    <div className="grid grid-cols-4 gap-1 rounded-full bg-muted p-1">
+                      {(
+                        [
+                          ["all", "Tout"],
+                          ["in", "Dispo"],
+                          ["low", "Faible"],
+                          ["out", "Rupture"],
+                        ] as const
+                      ).map(([v, l]) => (
+                        <button
+                          key={v}
+                          onClick={() => setStockFilter(v)}
+                          className={`rounded-full px-2 py-1.5 text-[11px] font-semibold transition ${
+                            stockFilter === v
+                              ? "bg-background text-foreground shadow-card"
+                              : "text-muted-foreground"
+                          }`}
+                        >
+                          {l}
+                        </button>
+                      ))}
+                    </div>
+                  </FilterGroup>
+                  <FilterGroup label="Trier par">
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as any)}
+                      className="h-10 w-full rounded-full border border-border bg-background px-3 text-xs font-semibold outline-none focus:border-primary"
+                    >
+                      <option value="recent">Plus récents</option>
+                      <option value="name">Nom (A→Z)</option>
+                      <option value="price_asc">Prix croissant</option>
+                      <option value="price_desc">Prix décroissant</option>
+                      <option value="stock_asc">Stock croissant</option>
+                      <option value="stock_desc">Stock décroissant</option>
+                      <option value="discount">Réduction (%)</option>
+                    </select>
+                  </FilterGroup>
+                </div>
+                {activeFiltersCount > 0 && (
+                  <button
+                    onClick={resetFilters}
+                    className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                  >
+                    <X className="h-3 w-3" /> Réinitialiser
+                  </button>
+                )}
+              </div>
+            )}
 
             <div className="mt-4 overflow-hidden rounded-3xl border border-border bg-card shadow-card">
               {filteredItems.length === 0 ? (
