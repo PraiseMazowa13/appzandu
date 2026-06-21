@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Lock, LogOut, Plus, Pencil, Trash2, Package, Tag, AlertCircle, Upload, ShoppingCart, TrendingUp, Clock, Check, Trash, Search } from "lucide-react";
+import { Lock, LogOut, Plus, Pencil, Trash2, Package, Tag, AlertCircle, Upload, ShoppingCart, TrendingUp, Clock, Check, Trash, Search, SlidersHorizontal, FolderTree, X } from "lucide-react";
 import { SiteShell } from "@/components/layout/SiteShell";
 import { formatPrice } from "@/stores/cart";
 import { toast } from "sonner";
@@ -245,13 +245,112 @@ function Dashboard({
 
   const [tab, setTab] = useState<"sales" | "products">("sales");
   const [search, setSearch] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [showCats, setShowCats] = useState(false);
+  const [catFilter, setCatFilter] = useState<string>("all");
+  const [promoFilter, setPromoFilter] = useState<"all" | "promo" | "regular">("all");
+  const [stockFilter, setStockFilter] = useState<"all" | "in" | "low" | "out">("all");
+  const [sortBy, setSortBy] = useState<
+    "recent" | "name" | "price_asc" | "price_desc" | "stock_asc" | "stock_desc" | "discount"
+  >("recent");
+
+  const categories = useMemo(() => {
+    const set = new Map<string, number>();
+    for (const p of items) {
+      const c = (p.category ?? "").trim();
+      if (!c) continue;
+      set.set(c, (set.get(c) ?? 0) + 1);
+    }
+    return Array.from(set.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [items]);
+
+  const activeFiltersCount =
+    (catFilter !== "all" ? 1 : 0) +
+    (promoFilter !== "all" ? 1 : 0) +
+    (stockFilter !== "all" ? 1 : 0) +
+    (sortBy !== "recent" ? 1 : 0);
+
   const filteredItems = useMemo(() => {
     const n = search.trim().toLowerCase();
-    if (!n) return items;
-    return items.filter((p) =>
-      `${p.name} ${p.category ?? ""} ${p.badge ?? ""}`.toLowerCase().includes(n),
-    );
-  }, [items, search]);
+    let out = items.filter((p) => {
+      if (n && !`${p.name} ${p.category ?? ""} ${p.badge ?? ""}`.toLowerCase().includes(n))
+        return false;
+      if (catFilter !== "all" && (p.category ?? "") !== catFilter) return false;
+      const isPromo =
+        !!p.compare_at_price_cents && p.compare_at_price_cents > p.price_cents;
+      if (promoFilter === "promo" && !isPromo) return false;
+      if (promoFilter === "regular" && isPromo) return false;
+      if (stockFilter === "out" && p.stock > 0) return false;
+      if (stockFilter === "in" && p.stock <= 0) return false;
+      if (stockFilter === "low" && (p.stock <= 0 || p.stock > 5)) return false;
+      return true;
+    });
+    const disc = (p: AdminProduct) =>
+      p.compare_at_price_cents && p.compare_at_price_cents > p.price_cents
+        ? (p.compare_at_price_cents - p.price_cents) / p.compare_at_price_cents
+        : 0;
+    out = [...out].sort((a, b) => {
+      switch (sortBy) {
+        case "name":
+          return a.name.localeCompare(b.name);
+        case "price_asc":
+          return a.price_cents - b.price_cents;
+        case "price_desc":
+          return b.price_cents - a.price_cents;
+        case "stock_asc":
+          return a.stock - b.stock;
+        case "stock_desc":
+          return b.stock - a.stock;
+        case "discount":
+          return disc(b) - disc(a);
+        default:
+          return 0;
+      }
+    });
+    return out;
+  }, [items, search, catFilter, promoFilter, stockFilter, sortBy]);
+
+  const resetFilters = () => {
+    setCatFilter("all");
+    setPromoFilter("all");
+    setStockFilter("all");
+    setSortBy("recent");
+  };
+
+  const renameCategory = async (oldName: string, newName: string) => {
+    const target = newName.trim();
+    if (!target || target === oldName) return;
+    const affected = items.filter((p) => (p.category ?? "") === oldName);
+    try {
+      await Promise.all(
+        affected.map((p) =>
+          update({ data: { ...creds, id: p.id, product: { category: target } } }),
+        ),
+      );
+      toast.success(`Catégorie renommée (${affected.length} produit${affected.length > 1 ? "s" : ""})`);
+      if (catFilter === oldName) setCatFilter(target);
+      refresh();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erreur");
+    }
+  };
+
+  const deleteCategory = async (name: string) => {
+    const affected = items.filter((p) => (p.category ?? "") === name);
+    if (!confirm(`Retirer la catégorie "${name}" de ${affected.length} produit(s) ?`)) return;
+    try {
+      await Promise.all(
+        affected.map((p) =>
+          update({ data: { ...creds, id: p.id, product: { category: null } } }),
+        ),
+      );
+      toast.success("Catégorie supprimée");
+      if (catFilter === name) setCatFilter("all");
+      refresh();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erreur");
+    }
+  };
 
   return (
     <SiteShell>
@@ -305,24 +404,142 @@ function Dashboard({
               </button>
             </div>
 
-            <div className="relative mt-3">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Rechercher un produit, catégorie, badge..."
-                className="h-11 w-full rounded-full border border-border bg-card pl-10 pr-10 text-sm outline-none focus:border-primary"
-              />
-              {search && (
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+              <div className="relative flex-1">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Rechercher un produit, catégorie, badge..."
+                  className="h-11 w-full rounded-full border border-border bg-card pl-10 pr-10 text-sm outline-none focus:border-primary"
+                />
+                {search && (
+                  <button
+                    onClick={() => setSearch("")}
+                    className="absolute right-2 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-muted text-xs hover:bg-muted/70"
+                    aria-label="Effacer"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+              <div className="flex gap-2">
                 <button
-                  onClick={() => setSearch("")}
-                  className="absolute right-2 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-muted text-xs hover:bg-muted/70"
-                  aria-label="Effacer"
+                  onClick={() => setShowFilters((v) => !v)}
+                  className={`relative inline-flex h-11 items-center gap-2 rounded-full border px-4 text-xs font-semibold transition ${
+                    showFilters || activeFiltersCount > 0
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border bg-card hover:bg-muted"
+                  }`}
                 >
-                  ✕
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                  Filtres
+                  {activeFiltersCount > 0 && (
+                    <span className="grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
+                      {activeFiltersCount}
+                    </span>
+                  )}
                 </button>
-              )}
+                <button
+                  onClick={() => setShowCats(true)}
+                  className="inline-flex h-11 items-center gap-2 rounded-full border border-border bg-card px-4 text-xs font-semibold hover:bg-muted"
+                >
+                  <FolderTree className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Catégories</span>
+                </button>
+              </div>
             </div>
+
+            {showFilters && (
+              <div className="mt-3 rounded-3xl border border-border bg-card p-4 shadow-card">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                  <FilterGroup label="Catégorie">
+                    <select
+                      value={catFilter}
+                      onChange={(e) => setCatFilter(e.target.value)}
+                      className="h-10 w-full rounded-full border border-border bg-background px-3 text-xs font-semibold outline-none focus:border-primary"
+                    >
+                      <option value="all">Toutes</option>
+                      {categories.map(([c, n]) => (
+                        <option key={c} value={c}>
+                          {c} ({n})
+                        </option>
+                      ))}
+                    </select>
+                  </FilterGroup>
+                  <FilterGroup label="Promotion">
+                    <div className="grid grid-cols-3 gap-1 rounded-full bg-muted p-1">
+                      {(
+                        [
+                          ["all", "Toutes"],
+                          ["promo", "En promo"],
+                          ["regular", "Sans"],
+                        ] as const
+                      ).map(([v, l]) => (
+                        <button
+                          key={v}
+                          onClick={() => setPromoFilter(v)}
+                          className={`rounded-full px-2 py-1.5 text-[11px] font-semibold transition ${
+                            promoFilter === v
+                              ? "bg-background text-foreground shadow-card"
+                              : "text-muted-foreground"
+                          }`}
+                        >
+                          {l}
+                        </button>
+                      ))}
+                    </div>
+                  </FilterGroup>
+                  <FilterGroup label="Stock">
+                    <div className="grid grid-cols-4 gap-1 rounded-full bg-muted p-1">
+                      {(
+                        [
+                          ["all", "Tout"],
+                          ["in", "Dispo"],
+                          ["low", "Faible"],
+                          ["out", "Rupture"],
+                        ] as const
+                      ).map(([v, l]) => (
+                        <button
+                          key={v}
+                          onClick={() => setStockFilter(v)}
+                          className={`rounded-full px-2 py-1.5 text-[11px] font-semibold transition ${
+                            stockFilter === v
+                              ? "bg-background text-foreground shadow-card"
+                              : "text-muted-foreground"
+                          }`}
+                        >
+                          {l}
+                        </button>
+                      ))}
+                    </div>
+                  </FilterGroup>
+                  <FilterGroup label="Trier par">
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as any)}
+                      className="h-10 w-full rounded-full border border-border bg-background px-3 text-xs font-semibold outline-none focus:border-primary"
+                    >
+                      <option value="recent">Plus récents</option>
+                      <option value="name">Nom (A→Z)</option>
+                      <option value="price_asc">Prix croissant</option>
+                      <option value="price_desc">Prix décroissant</option>
+                      <option value="stock_asc">Stock croissant</option>
+                      <option value="stock_desc">Stock décroissant</option>
+                      <option value="discount">Réduction (%)</option>
+                    </select>
+                  </FilterGroup>
+                </div>
+                {activeFiltersCount > 0 && (
+                  <button
+                    onClick={resetFilters}
+                    className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                  >
+                    <X className="h-3 w-3" /> Réinitialiser
+                  </button>
+                )}
+              </div>
+            )}
 
             <div className="mt-4 overflow-hidden rounded-3xl border border-border bg-card shadow-card">
               {filteredItems.length === 0 ? (
@@ -410,6 +627,15 @@ function Dashboard({
           }}
           onSubmit={submit}
           onUpload={handleFile}
+        />
+      )}
+
+      {showCats && (
+        <CategoryManager
+          categories={categories}
+          onClose={() => setShowCats(false)}
+          onRename={renameCategory}
+          onDelete={deleteCategory}
         />
       )}
     </SiteShell>
@@ -1070,6 +1296,122 @@ function SalesPanel({
             💡 Les ventes sont enregistrées localement sur cet appareil lorsque les
             clients valident leur commande via WhatsApp.
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FilterGroup({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </p>
+      {children}
+    </div>
+  );
+}
+
+function CategoryManager({
+  categories,
+  onClose,
+  onRename,
+  onDelete,
+}: {
+  categories: [string, number][];
+  onClose: () => void;
+  onRename: (oldName: string, newName: string) => Promise<void> | void;
+  onDelete: (name: string) => Promise<void> | void;
+}) {
+  const [editing, setEditing] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/40 backdrop-blur-sm md:items-center md:p-6">
+      <div className="flex max-h-[90vh] w-full max-w-lg flex-col rounded-t-3xl bg-background shadow-float md:rounded-3xl">
+        <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
+          <div className="min-w-0">
+            <h3 className="font-display text-lg font-black">Gérer les catégories</h3>
+            <p className="text-xs text-muted-foreground">
+              Renommez ou supprimez les catégories existantes
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-full bg-muted px-3 py-1.5 text-xs font-semibold hover:bg-muted/70"
+          >
+            Fermer
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto px-5 py-5">
+          {categories.length === 0 ? (
+            <p className="py-10 text-center text-sm text-muted-foreground">
+              Aucune catégorie pour l'instant. Ajoutez-en via le formulaire produit.
+            </p>
+          ) : (
+            <ul className="divide-y divide-border rounded-2xl border border-border bg-card">
+              {categories.map(([name, count]) => (
+                <li key={name} className="flex items-center gap-2 p-3">
+                  {editing === name ? (
+                    <>
+                      <input
+                        autoFocus
+                        value={draft}
+                        onChange={(e) => setDraft(e.target.value)}
+                        className="h-9 flex-1 rounded-full border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+                      />
+                      <button
+                        onClick={async () => {
+                          await onRename(name, draft);
+                          setEditing(null);
+                        }}
+                        className="rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground"
+                      >
+                        OK
+                      </button>
+                      <button
+                        onClick={() => setEditing(null)}
+                        className="rounded-full bg-muted px-3 py-1.5 text-xs font-semibold"
+                      >
+                        ✕
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-semibold">{name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {count} produit{count > 1 ? "s" : ""}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setEditing(name);
+                          setDraft(name);
+                        }}
+                        className="grid h-9 w-9 place-items-center rounded-full bg-muted hover:bg-muted/70"
+                        aria-label="Renommer"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => onDelete(name)}
+                        className="grid h-9 w-9 place-items-center rounded-full bg-muted hover:bg-destructive hover:text-destructive-foreground"
+                        aria-label="Supprimer"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="mt-4 text-xs text-muted-foreground">
+            Astuce : pour créer une nouvelle catégorie, saisissez-la directement dans le champ
+            « Catégorie » du formulaire produit.
+          </p>
         </div>
       </div>
     </div>
