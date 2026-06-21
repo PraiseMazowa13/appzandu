@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { SiteShell } from "@/components/layout/SiteShell";
 import { ProductCard } from "@/components/product/ProductCard";
@@ -31,6 +31,9 @@ function CataloguePage() {
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [sort, setSort] = useState<SortKey>("featured");
   const [showFilters, setShowFilters] = useState(false);
+  const PAGE_SIZE = 12;
+  const [visible, setVisible] = useState(PAGE_SIZE);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const categories = useMemo(
     () =>
@@ -70,6 +73,29 @@ function CataloguePage() {
         return list;
     }
   }, [products, q, cat, maxPrice, priceMax, sort]);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setVisible(PAGE_SIZE);
+  }, [q, cat, maxPrice, sort]);
+
+  // Infinite scroll via IntersectionObserver
+  useEffect(() => {
+    if (!sentinelRef.current) return;
+    const el = sentinelRef.current;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisible((v) => Math.min(v + PAGE_SIZE, filtered.length));
+        }
+      },
+      { rootMargin: "400px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [filtered.length]);
+
+  const shown = filtered.slice(0, visible);
 
   const reset = () => {
     setCat("all");
@@ -117,11 +143,29 @@ function CataloguePage() {
             Aucun produit ne correspond à votre recherche.
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-5 lg:grid-cols-4">
-            {filtered.map((p) => (
-              <ProductCard key={p.id} product={p as any} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-3 gap-3 md:gap-5">
+              {shown.map((p) => (
+                <ProductCard key={p.id} product={p as any} />
+              ))}
+            </div>
+            {visible < filtered.length && (
+              <div ref={sentinelRef} className="mt-8 flex flex-col items-center gap-3">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                <button
+                  onClick={() => setVisible((v) => Math.min(v + PAGE_SIZE, filtered.length))}
+                  className="rounded-full border border-border bg-card px-5 py-2 text-xs font-semibold hover:bg-muted"
+                >
+                  Charger plus ({filtered.length - visible} restants)
+                </button>
+              </div>
+            )}
+            {visible >= filtered.length && filtered.length > PAGE_SIZE && (
+              <p className="mt-8 text-center text-xs text-muted-foreground">
+                Vous avez vu tous les produits 🎉
+              </p>
+            )}
+          </>
         )}
       </div>
 
