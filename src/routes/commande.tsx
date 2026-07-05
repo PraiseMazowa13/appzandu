@@ -1,10 +1,13 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { z } from "zod";
 import { Minus, Plus, Trash2, MessageCircle, ShoppingBag } from "lucide-react";
 import { SiteShell } from "@/components/layout/SiteShell";
 import { useCart, formatPrice } from "@/stores/cart";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { useServerFn } from "@tanstack/react-start";
+import { createMyOrder } from "@/lib/account.functions";
 
 export const Route = createFileRoute("/commande")({
   head: () => ({
@@ -29,8 +32,11 @@ const CustomerSchema = z.object({
 function CommandePage() {
   const { items, setQty, remove, totalCents, clear } = useCart();
   const [form, setForm] = useState({ name: "", phone: "", address: "", city: "" });
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const saveOrder = useServerFn(createMyOrder);
 
-  const handleOrder = () => {
+  const handleOrder = async () => {
     if (items.length === 0) {
       toast.error("Votre panier est vide");
       return;
@@ -57,30 +63,33 @@ function CommandePage() {
       `💰 *Total : ${formatPrice(totalCents())}*\n\n` +
       `💳 Paiement Mobile Money : ${MOBILE_MONEY}`;
 
-    // Enregistrement local pour le tableau de bord admin
-    try {
-      const order = {
-        id: (crypto as any)?.randomUUID?.() ?? `o_${Date.now()}`,
-        createdAt: Date.now(),
-        customer: parsed.data,
-        items: items.map((i) => ({
-          id: i.id,
-          name: i.name,
-          price_cents: i.price_cents,
-          quantity: i.quantity,
-        })),
-        total_cents: totalCents(),
-        status: "pending" as const,
-      };
-      const raw = localStorage.getItem("zandu-orders");
-      const list = raw ? JSON.parse(raw) : [];
-      list.unshift(order);
-      localStorage.setItem("zandu-orders", JSON.stringify(list.slice(0, 300)));
-    } catch {}
+    // Sauvegarde en base si connecté (permet l'historique + facture PDF)
+    if (user) {
+      try {
+        await saveOrder({
+          data: {
+            customer: parsed.data,
+            items: items.map((i) => ({
+              product_id: i.id,
+              product_name: i.name,
+              unit_price_cents: i.price_cents,
+              quantity: i.quantity,
+            })),
+          },
+        });
+      } catch (e: any) {
+        console.error(e);
+        toast.error("Impossible d'enregistrer la commande");
+      }
+    }
 
     const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
     window.open(url, "_blank", "noopener,noreferrer");
     toast.success("Commande envoyée via WhatsApp");
+    if (user) {
+      clear();
+      navigate({ to: "/compte" });
+    }
   };
 
   return (

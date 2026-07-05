@@ -1,7 +1,9 @@
-import { Link } from "@tanstack/react-router";
-import { Plus, Flame, Truck } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { Plus, Flame, Truck, Heart } from "lucide-react";
 import { useCart, formatPrice } from "@/stores/cart";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { useFavoriteIds, useToggleFavorite } from "@/hooks/useFavorites";
 
 export type ProductCardData = {
   id: string;
@@ -19,6 +21,12 @@ export type ProductCardData = {
 export function ProductCard({ product }: { product: ProductCardData }) {
   const add = useCart((s) => s.add);
   const openCart = useCart((s) => s.open);
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { data: favIds } = useFavoriteIds();
+  const toggleFav = useToggleFavorite();
+  const isFav = !!favIds?.includes(product.id);
+
   const outOfStock = product.stock <= 0;
   const hasPromo =
     product.compare_at_price_cents && product.compare_at_price_cents > product.price_cents;
@@ -69,10 +77,32 @@ export function ProductCard({ product }: { product: ProductCardData }) {
         ) : null}
 
         {outOfStock && (
-          <span className="absolute right-2 top-2 rounded-full bg-foreground/90 px-2 py-0.5 text-[10px] font-bold uppercase text-background">
+          <span className="absolute right-2 top-10 rounded-full bg-foreground/90 px-2 py-0.5 text-[10px] font-bold uppercase text-background">
             Rupture
           </span>
         )}
+
+        {/* Favorite heart */}
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!user) {
+              toast.message("Connectez-vous pour sauvegarder vos favoris");
+              navigate({ to: "/auth" });
+              return;
+            }
+            toggleFav.mutate(product.id);
+          }}
+          aria-label={isFav ? "Retirer des favoris" : "Ajouter aux favoris"}
+          className={`absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full shadow-soft transition ${
+            isFav
+              ? "bg-primary text-primary-foreground"
+              : "bg-background/90 text-foreground hover:bg-primary hover:text-primary-foreground"
+          }`}
+        >
+          <Heart className={`h-3.5 w-3.5 ${isFav ? "fill-current" : ""}`} />
+        </button>
 
         {/* Bottom-right round add button */}
         <button

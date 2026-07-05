@@ -14,6 +14,35 @@ export type Database = {
   }
   public: {
     Tables: {
+      favorites: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorites_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           id: string
@@ -59,6 +88,10 @@ export type Database = {
       orders: {
         Row: {
           created_at: string
+          customer_address: string | null
+          customer_city: string | null
+          customer_name: string | null
+          customer_phone: string | null
           id: string
           status: string
           total_cents: number
@@ -66,6 +99,10 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          customer_address?: string | null
+          customer_city?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
           id?: string
           status?: string
           total_cents: number
@@ -73,6 +110,10 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          customer_address?: string | null
+          customer_city?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
           id?: string
           status?: string
           total_cents?: number
