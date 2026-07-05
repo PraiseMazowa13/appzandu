@@ -1,10 +1,13 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { z } from "zod";
 import { Minus, Plus, Trash2, MessageCircle, ShoppingBag } from "lucide-react";
 import { SiteShell } from "@/components/layout/SiteShell";
 import { useCart, formatPrice } from "@/stores/cart";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { useServerFn } from "@tanstack/react-start";
+import { createMyOrder } from "@/lib/account.functions";
 
 export const Route = createFileRoute("/commande")({
   head: () => ({
@@ -29,8 +32,11 @@ const CustomerSchema = z.object({
 function CommandePage() {
   const { items, setQty, remove, totalCents, clear } = useCart();
   const [form, setForm] = useState({ name: "", phone: "", address: "", city: "" });
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const saveOrder = useServerFn(createMyOrder);
 
-  const handleOrder = () => {
+  const handleOrder = async () => {
     if (items.length === 0) {
       toast.error("Votre panier est vide");
       return;
