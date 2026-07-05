@@ -1,5 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Menu, ShoppingBag, Zap, X } from "lucide-react";
+import { Menu, ShoppingBag, Zap, X, User as UserIcon } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import { useState, type ReactNode } from "react";
 import { useCart } from "@/stores/cart";
 import { motion, AnimatePresence } from "framer-motion";
@@ -16,6 +17,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const count = useCart((s) => s.items.reduce((n, i) => n + i.quantity, 0));
   const openCart = useCart((s) => s.open);
+  const { user } = useAuth();
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -48,6 +50,13 @@ export function SiteShell({ children }: { children: ReactNode }) {
           </nav>
 
           <div className="ml-auto flex items-center gap-2">
+            <Link
+              to={user ? "/compte" : "/auth"}
+              aria-label="Mon compte"
+              className="grid h-10 w-10 place-items-center rounded-full bg-muted hover:bg-muted/70"
+            >
+              <UserIcon className="h-4 w-4" />
+            </Link>
             <Link
               to="/admin"
               className="hidden rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground md:inline-flex"
@@ -116,9 +125,16 @@ export function SiteShell({ children }: { children: ReactNode }) {
                   </Link>
                 ))}
                 <Link
+                  to={user ? "/compte" : "/auth"}
+                  onClick={() => setOpen(false)}
+                  className="mt-2 rounded-2xl bg-gradient-hero px-4 py-3 text-sm font-bold text-primary-foreground shadow-soft"
+                >
+                  👤 {user ? "Mon compte" : "Se connecter"}
+                </Link>
+                <Link
                   to="/admin"
                   onClick={() => setOpen(false)}
-                  className="mt-4 rounded-2xl border border-border px-4 py-3 text-sm font-semibold text-muted-foreground"
+                  className="mt-2 rounded-2xl border border-border px-4 py-3 text-sm font-semibold text-muted-foreground"
                 >
                   🔐 Espace admin
                 </Link>
