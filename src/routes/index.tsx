@@ -20,12 +20,13 @@ import {
   Heart,
   Zap,
   ChevronDown,
-  PlayCircle,
   Check,
 } from "lucide-react";
 import { SiteShell } from "@/components/layout/SiteShell";
 import { ProductCard } from "@/components/product/ProductCard";
 import { listProducts } from "@/lib/products.functions";
+import { useCart } from "@/stores/cart";
+import { useAuth } from "@/hooks/useAuth";
 
 const productsQO = queryOptions({
   queryKey: ["products", "all"],
@@ -118,6 +119,9 @@ const FAQS = [
 
 function HomePage() {
   const { data: products } = useSuspenseQuery(productsQO);
+  const openCart = useCart((s) => s.open);
+  const cartCount = useCart((s) => s.items.reduce((n, i) => n + i.quantity, 0));
+  const { user } = useAuth();
   const featured = products.slice(0, 9);
   const promos = products
     .filter((p) => p.compare_at_price_cents && p.compare_at_price_cents > p.price_cents)
@@ -152,20 +156,27 @@ function HomePage() {
 
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
-                to="/auth"
+                to={user ? "/catalogue" : "/auth"}
                 className="group inline-flex items-center gap-2 rounded-full bg-gradient-hero px-6 py-3.5 text-sm font-bold text-primary-foreground shadow-soft transition hover:opacity-95"
               >
-                Commencer gratuitement
+                {user ? "Explorer le catalogue" : "Commencer gratuitement"}
                 <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
               </Link>
-              <a
-                href="#comment-ca-marche"
+              <button
+                type="button"
+                onClick={openCart}
                 className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3.5 text-sm font-semibold hover:bg-muted"
               >
-                <PlayCircle className="h-4 w-4 text-primary" />
-                Voir la démonstration
-              </a>
+                <ShoppingBag className="h-4 w-4 text-primary" />
+                Aperçu du panier
+                {cartCount > 0 && (
+                  <span className="grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
+                    {cartCount}
+                  </span>
+                )}
+              </button>
             </div>
+
 
             {/* Trust row */}
             <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
@@ -652,10 +663,10 @@ function HomePage() {
               </div>
               <div className="flex flex-wrap justify-start gap-3 md:justify-end">
                 <Link
-                  to="/auth"
+                  to={user ? "/compte" : "/auth"}
                   className="inline-flex items-center gap-2 rounded-full bg-background px-6 py-3.5 text-sm font-bold text-foreground shadow-soft hover:bg-card"
                 >
-                  Commencer gratuitement
+                  {user ? "Mon compte" : "Commencer gratuitement"}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
