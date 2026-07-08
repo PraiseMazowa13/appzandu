@@ -26,6 +26,8 @@ import {
 import { SiteShell } from "@/components/layout/SiteShell";
 import { ProductCard } from "@/components/product/ProductCard";
 import { listProducts } from "@/lib/products.functions";
+import { useCart } from "@/stores/cart";
+import { useAuth } from "@/hooks/useAuth";
 
 const productsQO = queryOptions({
   queryKey: ["products", "all"],
