@@ -120,6 +120,9 @@ const FAQS = [
 
 function HomePage() {
   const { data: products } = useSuspenseQuery(productsQO);
+  const openCart = useCart((s) => s.open);
+  const cartCount = useCart((s) => s.items.reduce((n, i) => n + i.quantity, 0));
+  const { user } = useAuth();
   const featured = products.slice(0, 9);
   const promos = products
     .filter((p) => p.compare_at_price_cents && p.compare_at_price_cents > p.price_cents)
