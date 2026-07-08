@@ -41,11 +41,17 @@ function CommandePage() {
       toast.error("Votre panier est vide");
       return;
     }
+    if (!user) {
+      toast.message("Connectez-vous pour finaliser votre commande");
+      navigate({ to: "/auth", search: { redirect: "/commande" } as any });
+      return;
+    }
     const parsed = CustomerSchema.safeParse(form);
     if (!parsed.success) {
       toast.error(parsed.error.issues[0].message);
       return;
     }
+
     const lines = items
       .map(
         (i, idx) =>
@@ -217,13 +223,20 @@ function CommandePage() {
                   Envoyez le montant au <strong className="text-foreground">{MOBILE_MONEY}</strong>
                 </p>
               </div>
+              {!user && items.length > 0 && (
+                <div className="mt-3 rounded-2xl border border-primary/20 bg-primary/5 p-3 text-xs text-foreground">
+                  🔒 Une connexion est requise uniquement pour finaliser la commande (historique + facture PDF).
+                </div>
+              )}
               <button
                 onClick={handleOrder}
                 disabled={items.length === 0}
                 className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-emerald-500 px-5 py-3.5 text-sm font-bold text-white shadow-soft transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <MessageCircle className="h-4 w-4" /> Commander via WhatsApp
+                <MessageCircle className="h-4 w-4" />{" "}
+                {user ? "Commander via WhatsApp" : "Se connecter pour commander"}
               </button>
+
               {items.length > 0 && (
                 <button
                   onClick={() => {
