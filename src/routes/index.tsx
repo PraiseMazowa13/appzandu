@@ -663,10 +663,10 @@ function HomePage() {
               </div>
               <div className="flex flex-wrap justify-start gap-3 md:justify-end">
                 <Link
-                  to="/auth"
+                  to={user ? "/compte" : "/auth"}
                   className="inline-flex items-center gap-2 rounded-full bg-background px-6 py-3.5 text-sm font-bold text-foreground shadow-soft hover:bg-card"
                 >
-                  Commencer gratuitement
+                  {user ? "Mon compte" : "Commencer gratuitement"}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
