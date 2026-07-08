@@ -20,7 +20,6 @@ import {
   Heart,
   Zap,
   ChevronDown,
-  PlayCircle,
   Check,
 } from "lucide-react";
 import { SiteShell } from "@/components/layout/SiteShell";
