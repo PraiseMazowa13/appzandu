@@ -157,20 +157,27 @@ function HomePage() {
 
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
-                to="/auth"
+                to={user ? "/catalogue" : "/auth"}
                 className="group inline-flex items-center gap-2 rounded-full bg-gradient-hero px-6 py-3.5 text-sm font-bold text-primary-foreground shadow-soft transition hover:opacity-95"
               >
-                Commencer gratuitement
+                {user ? "Explorer le catalogue" : "Commencer gratuitement"}
                 <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
               </Link>
-              <a
-                href="#comment-ca-marche"
+              <button
+                type="button"
+                onClick={openCart}
                 className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3.5 text-sm font-semibold hover:bg-muted"
               >
-                <PlayCircle className="h-4 w-4 text-primary" />
-                Voir la démonstration
-              </a>
+                <ShoppingBag className="h-4 w-4 text-primary" />
+                Aperçu du panier
+                {cartCount > 0 && (
+                  <span className="grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
+                    {cartCount}
+                  </span>
+                )}
+              </button>
             </div>
+
 
             {/* Trust row */}
             <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
