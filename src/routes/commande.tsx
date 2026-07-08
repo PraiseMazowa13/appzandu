@@ -41,11 +41,17 @@ function CommandePage() {
       toast.error("Votre panier est vide");
       return;
     }
+    if (!user) {
+      toast.message("Connectez-vous pour finaliser votre commande");
+      navigate({ to: "/auth", search: { redirect: "/commande" } as any });
+      return;
+    }
     const parsed = CustomerSchema.safeParse(form);
     if (!parsed.success) {
       toast.error(parsed.error.issues[0].message);
       return;
     }
+
     const lines = items
       .map(
         (i, idx) =>
