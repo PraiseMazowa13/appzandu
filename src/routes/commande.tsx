@@ -25,13 +25,12 @@ const MOBILE_MONEY = "0895 975 170";
 const CustomerSchema = z.object({
   name: z.string().trim().min(2, "Nom requis").max(80),
   phone: z.string().trim().min(8, "Téléphone requis").max(20),
-  address: z.string().trim().min(3, "Adresse requise").max(200),
-  city: z.string().trim().min(2, "Ville requise").max(80),
+  address: z.string().trim().max(200).optional(),
 });
 
 function CommandePage() {
   const { items, setQty, remove, totalCents, clear } = useCart();
-  const [form, setForm] = useState({ name: "", phone: "", address: "", city: "" });
+  const [form, setForm] = useState({ name: "", phone: "", address: "" });
   const { user } = useAuth();
   const navigate = useNavigate();
   const saveOrder = useServerFn(createMyOrder);
@@ -57,9 +56,8 @@ function CommandePage() {
       `👤 *Client*\n` +
       `Nom : ${parsed.data.name}\n` +
       `Tél : ${parsed.data.phone}\n` +
-      `Adresse : ${parsed.data.address}\n` +
-      `Ville : ${parsed.data.city}\n\n` +
-      `📦 *Articles*\n${lines}\n\n` +
+      (parsed.data.address ? `Lieu : ${parsed.data.address}\n` : "") +
+      `\n📦 *Articles*\n${lines}\n\n` +
       `💰 *Total : ${formatPrice(totalCents())}*\n\n` +
       `💳 Paiement Mobile Money : ${MOBILE_MONEY}`;
 
