@@ -181,10 +181,9 @@ function CommandePage() {
               <div className="mt-4 space-y-3">
                 {(
                   [
-                    { k: "name", label: "Nom complet", type: "text" },
-                    { k: "phone", label: "Téléphone", type: "tel" },
-                    { k: "address", label: "Adresse", type: "text" },
-                    { k: "city", label: "Ville", type: "text" },
+                    { k: "name", label: "Nom complet", type: "text", placeholder: "Ex. Jean Kabila" },
+                    { k: "phone", label: "Téléphone (WhatsApp)", type: "tel", placeholder: "+243 …" },
+                    { k: "address", label: "Lieu de livraison (optionnel)", type: "text", placeholder: "Quartier / ville" },
                   ] as const
                 ).map((f) => (
                   <div key={f.k}>
