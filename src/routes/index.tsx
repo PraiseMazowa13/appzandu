@@ -87,38 +87,64 @@ function HomePage() {
       </section>
 
       {/* FEATURED PRODUCTS */}
-      <section className="px-4 py-10 md:px-8 md:py-14">
+      <section className="px-4 py-12 md:px-8 md:py-20">
         <div className="mx-auto max-w-6xl">
-          <div className="mb-6 flex items-end justify-between gap-4">
-            <h2 className="font-display text-2xl font-black md:text-3xl">
-              Nos produits
-            </h2>
+          <div className="mb-8 flex flex-col items-start gap-3 md:mb-10 md:flex-row md:items-end md:justify-between">
+            <div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-primary">
+                <Flame className="h-3 w-3" /> Tendances du moment
+              </span>
+              <h2 className="mt-3 font-display text-3xl font-black leading-tight tracking-tight md:text-4xl">
+                Nos produits <span className="bg-gradient-hero bg-clip-text text-transparent">phares</span>
+              </h2>
+              <p className="mt-1.5 text-sm text-muted-foreground md:text-base">
+                Sélectionnés pour vous — qualité vérifiée, livraison rapide.
+              </p>
+            </div>
             <Link
               to="/catalogue"
-              className="hidden items-center gap-1 text-sm font-semibold text-primary hover:underline md:inline-flex"
+              className="hidden items-center gap-1.5 rounded-full border border-border bg-card px-4 py-2 text-sm font-bold text-foreground shadow-card transition hover:border-primary hover:text-primary md:inline-flex"
             >
               Tout voir <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
+
           {featured.length === 0 ? (
             <p className="rounded-3xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
               Aucun produit pour le moment.
             </p>
           ) : (
             <>
-              <div className="grid grid-cols-3 gap-3 md:gap-5">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-6">
                 {featured.map((p) => (
                   <ProductCard key={p.id} product={p as any} />
                 ))}
               </div>
-              <div className="mt-8 flex justify-center">
-                <Link
-                  to="/catalogue"
-                  className="group inline-flex items-center gap-2 rounded-full bg-foreground px-7 py-3.5 text-sm font-bold text-background shadow-float transition hover:bg-primary"
-                >
-                  Voir plus de produits
-                  <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
-                </Link>
+
+              {/* Pro CTA banner */}
+              <div className="relative mt-10 overflow-hidden rounded-3xl border border-border bg-foreground p-6 shadow-float md:mt-14 md:p-10">
+                <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-primary/30 blur-3xl" />
+                <div className="absolute -bottom-16 -left-10 h-48 w-48 rounded-full bg-primary/20 blur-3xl" />
+                <div className="relative flex flex-col items-start gap-5 md:flex-row md:items-center md:justify-between">
+                  <div className="max-w-md text-background">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-background/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-background/90 backdrop-blur">
+                      Nouveautés chaque semaine
+                    </span>
+                    <h3 className="mt-3 font-display text-2xl font-black leading-tight md:text-3xl">
+                      Découvrez toute la collection Zandu
+                    </h3>
+                    <p className="mt-2 text-sm text-background/70">
+                      Des dizaines de produits vérifiés, à petits prix, prêts à être livrés chez vous.
+                    </p>
+                  </div>
+                  <Link
+                    to="/catalogue"
+                    className="group inline-flex items-center gap-2 rounded-full bg-gradient-hero px-6 py-3.5 text-sm font-black text-primary-foreground shadow-float transition hover:scale-[1.02]"
+                  >
+                    Explorer le catalogue
+                    <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
+                  </Link>
+                </div>
               </div>
             </>
           )}
