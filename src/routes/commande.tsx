@@ -192,6 +192,7 @@ function CommandePage() {
                     </label>
                     <input
                       type={f.type}
+                      placeholder={f.placeholder}
                       value={form[f.k]}
                       onChange={(e) => setForm({ ...form, [f.k]: e.target.value })}
                       className="mt-1 h-11 w-full rounded-2xl border border-border bg-background px-4 text-sm outline-none focus:border-primary"
