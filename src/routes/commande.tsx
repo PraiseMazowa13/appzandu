@@ -25,13 +25,12 @@ const MOBILE_MONEY = "0895 975 170";
 const CustomerSchema = z.object({
   name: z.string().trim().min(2, "Nom requis").max(80),
   phone: z.string().trim().min(8, "Téléphone requis").max(20),
-  address: z.string().trim().min(3, "Adresse requise").max(200),
-  city: z.string().trim().min(2, "Ville requise").max(80),
+  address: z.string().trim().max(200).optional(),
 });
 
 function CommandePage() {
   const { items, setQty, remove, totalCents, clear } = useCart();
-  const [form, setForm] = useState({ name: "", phone: "", address: "", city: "" });
+  const [form, setForm] = useState({ name: "", phone: "", address: "" });
   const { user } = useAuth();
   const navigate = useNavigate();
   const saveOrder = useServerFn(createMyOrder);
@@ -57,9 +56,8 @@ function CommandePage() {
       `👤 *Client*\n` +
       `Nom : ${parsed.data.name}\n` +
       `Tél : ${parsed.data.phone}\n` +
-      `Adresse : ${parsed.data.address}\n` +
-      `Ville : ${parsed.data.city}\n\n` +
-      `📦 *Articles*\n${lines}\n\n` +
+      (parsed.data.address ? `Lieu : ${parsed.data.address}\n` : "") +
+      `\n📦 *Articles*\n${lines}\n\n` +
       `💰 *Total : ${formatPrice(totalCents())}*\n\n` +
       `💳 Paiement Mobile Money : ${MOBILE_MONEY}`;
 
@@ -183,10 +181,9 @@ function CommandePage() {
               <div className="mt-4 space-y-3">
                 {(
                   [
-                    { k: "name", label: "Nom complet", type: "text" },
-                    { k: "phone", label: "Téléphone", type: "tel" },
-                    { k: "address", label: "Adresse", type: "text" },
-                    { k: "city", label: "Ville", type: "text" },
+                    { k: "name", label: "Nom complet", type: "text", placeholder: "Ex. Jean Kabila" },
+                    { k: "phone", label: "Téléphone (WhatsApp)", type: "tel", placeholder: "+243 …" },
+                    { k: "address", label: "Lieu de livraison (optionnel)", type: "text", placeholder: "Quartier / ville" },
                   ] as const
                 ).map((f) => (
                   <div key={f.k}>
@@ -195,6 +192,7 @@ function CommandePage() {
                     </label>
                     <input
                       type={f.type}
+                      placeholder={f.placeholder}
                       value={form[f.k]}
                       onChange={(e) => setForm({ ...form, [f.k]: e.target.value })}
                       className="mt-1 h-11 w-full rounded-2xl border border-border bg-background px-4 text-sm outline-none focus:border-primary"
