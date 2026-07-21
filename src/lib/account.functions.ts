@@ -57,8 +57,8 @@ const OrderInput = z.object({
   customer: z.object({
     name: z.string().trim().min(2).max(80),
     phone: z.string().trim().min(8).max(20),
-    address: z.string().trim().min(3).max(200),
-    city: z.string().trim().min(2).max(80),
+    address: z.string().trim().max(200).optional().default(""),
+    city: z.string().trim().max(80).optional().default(""),
   }),
   items: z
     .array(
