@@ -1056,10 +1056,12 @@ type StoredOrder = {
 const ORDERS_KEY = "zandu-orders";
 
 function SalesPanel({
+  creds,
   productCount,
   promoCount,
   outCount,
 }: {
+  creds: { username: string; password: string };
   productCount: number;
   promoCount: number;
   outCount: number;
