@@ -113,3 +113,49 @@ export const adminUploadImage = createServerFn({ method: "POST" })
     if (signErr) throw new Error(signErr.message);
     return { url: signed.signedUrl };
   });
+
+const SETTING_KEYS = ["whatsapp_number", "mobile_money"] as const;
+type SettingKey = (typeof SETTING_KEYS)[number];
+
+export const adminGetSettings = createServerFn({ method: "POST" })
+  .inputValidator((i) => Auth.parse(i))
+  .handler(async ({ data }) => {
+    checkAuth(data);
+    const sb = await admin();
+    const { data: rows, error } = await sb.from("settings").select("key,value");
+    if (error) throw new Error(error.message);
+    const map: Record<string, string> = {};
+    (rows ?? []).forEach((r: any) => (map[r.key] = r.value));
+    return map;
+  });
+
+export const adminUpdateSettings = createServerFn({ method: "POST" })
+  .inputValidator((i) =>
+    Auth.merge(
+      z.object({
+        settings: z.record(z.enum(SETTING_KEYS as unknown as [SettingKey]), z.string().trim().min(1).max(200)),
+      }),
+    ).parse(i),
+  )
+  .handler(async ({ data }) => {
+    checkAuth(data);
+    const sb = await admin();
+    const rows = Object.entries(data.settings).map(([key, value]) => ({
+      key,
+      value: value as string,
+      updated_at: new Date().toISOString(),
+    }));
+    if (rows.length === 0) return { ok: true };
+    const { error } = await sb.from("settings").upsert(rows, { onConflict: "key" });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const getPublicSettings = createServerFn({ method: "GET" }).handler(async () => {
+  const sb = await admin();
+  const { data: rows, error } = await sb.from("settings").select("key,value");
+  if (error) throw new Error(error.message);
+  const map: Record<string, string> = {};
+  (rows ?? []).forEach((r: any) => (map[r.key] = r.value));
+  return map;
+});

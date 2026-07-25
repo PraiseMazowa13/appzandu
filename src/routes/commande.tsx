@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { z } from "zod";
 import { Minus, Plus, Trash2, MessageCircle, ShoppingBag } from "lucide-react";
 import { SiteShell } from "@/components/layout/SiteShell";
@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useServerFn } from "@tanstack/react-start";
 import { createMyOrder } from "@/lib/account.functions";
+import { getPublicSettings } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/commande")({
   head: () => ({
@@ -19,8 +20,8 @@ export const Route = createFileRoute("/commande")({
   component: CommandePage,
 });
 
-const WHATSAPP_NUMBER = "243895975170";
-const MOBILE_MONEY = "0895 975 170";
+const DEFAULT_WHATSAPP = "243895975170";
+const DEFAULT_MOBILE_MONEY = "0895 975 170";
 
 const CustomerSchema = z.object({
   name: z.string().trim().min(2, "Nom requis").max(80),
@@ -34,6 +35,18 @@ function CommandePage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const saveOrder = useServerFn(createMyOrder);
+  const loadSettings = useServerFn(getPublicSettings);
+  const [whatsappNumber, setWhatsappNumber] = useState(DEFAULT_WHATSAPP);
+  const [mobileMoney, setMobileMoney] = useState(DEFAULT_MOBILE_MONEY);
+
+  useEffect(() => {
+    loadSettings({})
+      .then((s) => {
+        if (s?.whatsapp_number) setWhatsappNumber(String(s.whatsapp_number).replace(/[^0-9]/g, ""));
+        if (s?.mobile_money) setMobileMoney(String(s.mobile_money));
+      })
+      .catch(() => {});
+  }, [loadSettings]);
 
   const handleOrder = async () => {
     if (items.length === 0) {
@@ -59,7 +72,7 @@ function CommandePage() {
       (parsed.data.address ? `Lieu : ${parsed.data.address}\n` : "") +
       `\n📦 *Articles*\n${lines}\n\n` +
       `💰 *Total : ${formatPrice(totalCents())}*\n\n` +
-      `💳 Paiement Mobile Money : ${MOBILE_MONEY}`;
+      `💳 Paiement Mobile Money : ${mobileMoney}`;
 
     // Sauvegarde en base si connecté (permet l'historique + facture PDF)
     if (user) {
@@ -81,7 +94,7 @@ function CommandePage() {
       }
     }
 
-    const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+    const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
     window.open(url, "_blank", "noopener,noreferrer");
     toast.success("Commande envoyée via WhatsApp");
     if (user) {
@@ -212,7 +225,7 @@ function CommandePage() {
               <div className="mt-3 rounded-2xl bg-muted/60 p-3 text-xs">
                 <p className="font-semibold">💳 Paiement Mobile Money</p>
                 <p className="mt-1 text-muted-foreground">
-                  Envoyez le montant au <strong className="text-foreground">{MOBILE_MONEY}</strong>
+                  Envoyez le montant au <strong className="text-foreground">{mobileMoney}</strong>
                 </p>
               </div>
               <button
