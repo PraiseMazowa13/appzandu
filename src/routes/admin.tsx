@@ -12,6 +12,8 @@ import {
   adminUpdateProduct,
   adminDeleteProduct,
   adminUploadImage,
+  adminGetSettings,
+  adminUpdateSettings,
 } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/admin")({
