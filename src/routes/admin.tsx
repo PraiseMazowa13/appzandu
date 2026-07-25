@@ -1124,6 +1124,8 @@ function SalesPanel({
 
   return (
     <div className="mt-6 space-y-6">
+      <SettingsCard creds={creds} />
+
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
         <StatCard icon={TrendingUp} label="Chiffre d'affaires" value={Math.round(totalRevenue / 100)} tint="emerald" />
         <StatCard icon={ShoppingCart} label="Commandes" value={visible.length} tint="primary" />
