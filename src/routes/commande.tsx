@@ -35,6 +35,18 @@ function CommandePage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const saveOrder = useServerFn(createMyOrder);
+  const loadSettings = useServerFn(getPublicSettings);
+  const [whatsappNumber, setWhatsappNumber] = useState(DEFAULT_WHATSAPP);
+  const [mobileMoney, setMobileMoney] = useState(DEFAULT_MOBILE_MONEY);
+
+  useEffect(() => {
+    loadSettings({})
+      .then((s) => {
+        if (s?.whatsapp_number) setWhatsappNumber(String(s.whatsapp_number).replace(/[^0-9]/g, ""));
+        if (s?.mobile_money) setMobileMoney(String(s.mobile_money));
+      })
+      .catch(() => {});
+  }, [loadSettings]);
 
   const handleOrder = async () => {
     if (items.length === 0) {
