@@ -21,7 +21,7 @@ export const Route = createFileRoute("/commande")({
 });
 
 const DEFAULT_WHATSAPP = "243895975170";
-const DEFAULT_mobileMoney = "0895 975 170";
+const DEFAULT_MOBILE_MONEY = "0895 975 170";
 
 const CustomerSchema = z.object({
   name: z.string().trim().min(2, "Nom requis").max(80),
@@ -37,7 +37,7 @@ function CommandePage() {
   const saveOrder = useServerFn(createMyOrder);
   const loadSettings = useServerFn(getPublicSettings);
   const [whatsappNumber, setWhatsappNumber] = useState(DEFAULT_WHATSAPP);
-  const [mobileMoney, setMobileMoney] = useState(DEFAULT_mobileMoney);
+  const [mobileMoney, setMobileMoney] = useState(DEFAULT_MOBILE_MONEY);
 
   useEffect(() => {
     loadSettings({})
