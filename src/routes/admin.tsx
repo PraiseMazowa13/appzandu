@@ -385,7 +385,7 @@ function Dashboard({
         </div>
 
         {tab === "sales" ? (
-          <SalesPanel productCount={stats.total} promoCount={stats.promo} outCount={stats.out} />
+          <SalesPanel creds={creds} productCount={stats.total} promoCount={stats.promo} outCount={stats.out} />
         ) : (
           <>
             <div className="mt-6 grid grid-cols-3 gap-3 md:gap-5">
