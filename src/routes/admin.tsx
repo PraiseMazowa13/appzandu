@@ -1423,3 +1423,99 @@ function CategoryManager({
     </div>
   );
 }
+
+function SettingsCard({ creds }: { creds: { username: string; password: string } }) {
+  const getSettings = useServerFn(adminGetSettings);
+  const saveSettings = useServerFn(adminUpdateSettings);
+  const [whatsapp, setWhatsapp] = useState("");
+  const [mobile, setMobile] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    getSettings({ data: creds })
+      .then((s) => {
+        setWhatsapp(String(s?.whatsapp_number ?? ""));
+        setMobile(String(s?.mobile_money ?? ""));
+      })
+      .catch((e: any) => toast.error(e?.message ?? "Erreur de chargement"))
+      .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const save = async () => {
+    const cleaned = whatsapp.replace(/[^0-9]/g, "");
+    if (cleaned.length < 8) {
+      toast.error("Numéro WhatsApp invalide (chiffres uniquement, format international)");
+      return;
+    }
+    if (!mobile.trim()) {
+      toast.error("Numéro Mobile Money requis");
+      return;
+    }
+    setSaving(true);
+    try {
+      await saveSettings({
+        data: { ...creds, settings: { whatsapp_number: cleaned, mobile_money: mobile.trim() } },
+      });
+      toast.success("Paramètres enregistrés");
+      setWhatsapp(cleaned);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erreur");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="rounded-3xl border border-border bg-card p-5 shadow-card">
+      <div className="flex items-center gap-2">
+        <div className="grid h-9 w-9 place-items-center rounded-2xl bg-emerald-500/10 text-emerald-600">
+          <MessageCircle className="h-4 w-4" />
+        </div>
+        <div>
+          <h3 className="font-display text-base font-black">Paramètres de commande</h3>
+          <p className="text-xs text-muted-foreground">
+            Numéro WhatsApp qui reçoit les commandes & numéro Mobile Money affiché au client.
+          </p>
+        </div>
+      </div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div>
+          <label className="text-xs font-semibold text-muted-foreground">
+            Numéro WhatsApp (format international, chiffres uniquement)
+          </label>
+          <input
+            value={whatsapp}
+            onChange={(e) => setWhatsapp(e.target.value)}
+            placeholder="243895975170"
+            disabled={loading}
+            className="mt-1 h-11 w-full rounded-2xl border border-border bg-background px-4 text-sm outline-none focus:border-primary disabled:opacity-50"
+          />
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            Ex : 243895975170 (sans + ni espaces)
+          </p>
+        </div>
+        <div>
+          <label className="text-xs font-semibold text-muted-foreground">Numéro Mobile Money</label>
+          <input
+            value={mobile}
+            onChange={(e) => setMobile(e.target.value)}
+            placeholder="0895 975 170"
+            disabled={loading}
+            className="mt-1 h-11 w-full rounded-2xl border border-border bg-background px-4 text-sm outline-none focus:border-primary disabled:opacity-50"
+          />
+        </div>
+      </div>
+      <div className="mt-4 flex justify-end">
+        <button
+          onClick={save}
+          disabled={loading || saving}
+          className="inline-flex items-center gap-2 rounded-full bg-gradient-hero px-5 py-2.5 text-xs font-bold text-primary-foreground shadow-soft disabled:opacity-50"
+        >
+          <Check className="h-3.5 w-3.5" /> {saving ? "Enregistrement..." : "Enregistrer"}
+        </button>
+      </div>
+    </div>
+  );
+}
