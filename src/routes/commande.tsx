@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { z } from "zod";
 import { Minus, Plus, Trash2, MessageCircle, ShoppingBag } from "lucide-react";
 import { SiteShell } from "@/components/layout/SiteShell";
@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useServerFn } from "@tanstack/react-start";
 import { createMyOrder } from "@/lib/account.functions";
+import { getPublicSettings } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/commande")({
   head: () => ({
@@ -19,8 +20,8 @@ export const Route = createFileRoute("/commande")({
   component: CommandePage,
 });
 
-const WHATSAPP_NUMBER = "243895975170";
-const MOBILE_MONEY = "0895 975 170";
+const DEFAULT_WHATSAPP = "243895975170";
+const DEFAULT_MOBILE_MONEY = "0895 975 170";
 
 const CustomerSchema = z.object({
   name: z.string().trim().min(2, "Nom requis").max(80),
