@@ -14,7 +14,16 @@ import {
   adminUploadImage,
   adminGetSettings,
   adminUpdateSettings,
+  adminListOrders,
+  adminUpdateOrderStatus,
 } from "@/lib/admin.functions";
+import {
+  ORDER_STATUSES,
+  ORDER_STATUS_LABELS,
+  ORDER_STATUS_STYLES,
+  normalizeStatus,
+  type OrderStatus,
+} from "@/lib/orderStatus";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Administration — Zandu" }] }),
@@ -245,7 +254,7 @@ function Dashboard({
     }
   };
 
-  const [tab, setTab] = useState<"sales" | "products">("sales");
+  const [tab, setTab] = useState<"sales" | "orders" | "products">("sales");
   const [search, setSearch] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [showCats, setShowCats] = useState(false);
@@ -371,7 +380,7 @@ function Dashboard({
         </div>
 
         <div className="mt-6 inline-flex rounded-full bg-muted p-1">
-          {(["sales", "products"] as const).map((t) => (
+          {(["sales", "orders", "products"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -381,13 +390,15 @@ function Dashboard({
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {t === "sales" ? "📊 Ventes" : "📦 Produits"}
+              {t === "sales" ? "📊 Ventes" : t === "orders" ? "🚚 Suivi" : "📦 Produits"}
             </button>
           ))}
         </div>
 
         {tab === "sales" ? (
           <SalesPanel creds={creds} productCount={stats.total} promoCount={stats.promo} outCount={stats.out} />
+        ) : tab === "orders" ? (
+          <OrderTrackingPanel creds={creds} />
         ) : (
           <>
             <div className="mt-6 grid grid-cols-3 gap-3 md:gap-5">
@@ -1516,6 +1527,158 @@ function SettingsCard({ creds }: { creds: { username: string; password: string }
           <Check className="h-3.5 w-3.5" /> {saving ? "Enregistrement..." : "Enregistrer"}
         </button>
       </div>
+    </div>
+  );
+}
+
+type DbOrder = {
+  id: string;
+  total_cents: number;
+  status: string | null;
+  created_at: string;
+  customer_name: string | null;
+  customer_phone: string | null;
+  customer_address: string | null;
+  customer_city: string | null;
+  items: { id: string; product_name: string; unit_price_cents: number; quantity: number }[];
+};
+
+function OrderTrackingPanel({ creds }: { creds: { username: string; password: string } }) {
+  const listOrders = useServerFn(adminListOrders);
+  const updateStatus = useServerFn(adminUpdateOrderStatus);
+  const [orders, setOrders] = useState<DbOrder[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<"all" | OrderStatus>("all");
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const rows = (await listOrders({ data: creds })) as DbOrder[];
+      setOrders(rows);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erreur de chargement");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const setStatus = async (id: string, status: OrderStatus) => {
+    const prev = orders;
+    setOrders((o) => o.map((x) => (x.id === id ? { ...x, status } : x)));
+    try {
+      await updateStatus({ data: { ...creds, id, status } });
+      toast.success(`Statut mis à jour : ${ORDER_STATUS_LABELS[status]}`);
+    } catch (e: any) {
+      setOrders(prev);
+      toast.error(e?.message ?? "Erreur");
+    }
+  };
+
+  const visible =
+    filter === "all" ? orders : orders.filter((o) => normalizeStatus(o.status) === filter);
+
+  return (
+    <div className="mt-6 space-y-5">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="inline-flex flex-wrap rounded-full bg-muted p-1">
+          {(["all", ...ORDER_STATUSES] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f as any)}
+              className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition ${
+                filter === f ? "bg-background text-foreground shadow-card" : "text-muted-foreground"
+              }`}
+            >
+              {f === "all" ? "Toutes" : ORDER_STATUS_LABELS[f as OrderStatus]}
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={load}
+          className="ml-auto rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold hover:bg-muted"
+        >
+          Actualiser
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="grid gap-3">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-28 animate-pulse rounded-3xl border border-border bg-muted/40" />
+          ))}
+        </div>
+      ) : visible.length === 0 ? (
+        <div className="rounded-3xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
+          Aucune commande pour ce statut.
+        </div>
+      ) : (
+        <ul className="space-y-3">
+          {visible.map((o) => {
+            const st = normalizeStatus(o.status);
+            return (
+              <li key={o.id} className="rounded-3xl border border-border bg-card p-4 shadow-card">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-semibold">{o.customer_name ?? "Client"}</span>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${ORDER_STATUS_STYLES[st]}`}
+                      >
+                        {ORDER_STATUS_LABELS[st]}
+                      </span>
+                    </div>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      #{o.id.slice(0, 8).toUpperCase()} · 📞 {o.customer_phone ?? "—"}
+                      {o.customer_city ? ` · 📍 ${o.customer_city}` : ""}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(o.created_at).toLocaleString("fr-FR")}
+                    </p>
+                    <ul className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+                      {o.items.map((it) => (
+                        <li key={it.id}>• {it.product_name} × {it.quantity}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <span className="font-display text-base font-black">
+                    {formatPrice(o.total_cents)}
+                  </span>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-1.5 border-t border-border pt-3">
+                  {ORDER_STATUSES.map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => setStatus(o.id, s)}
+                      className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${
+                        s === st
+                          ? "bg-primary text-primary-foreground"
+                          : "border border-border bg-card text-muted-foreground hover:bg-muted"
+                      }`}
+                    >
+                      {ORDER_STATUS_LABELS[s]}
+                    </button>
+                  ))}
+                  {o.customer_phone && (
+                    <a
+                      href={`https://wa.me/${o.customer_phone.replace(/\D/g, "")}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold hover:bg-muted"
+                    >
+                      <MessageCircle className="h-3.5 w-3.5" /> Contacter
+                    </a>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }

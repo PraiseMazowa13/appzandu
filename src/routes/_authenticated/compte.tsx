@@ -22,6 +22,53 @@ import {
   toggleFavorite,
 } from "@/lib/account.functions";
 import { generateInvoicePDF } from "@/lib/invoice";
+import {
+  ORDER_STATUSES,
+  ORDER_STATUS_LABELS,
+  ORDER_STATUS_STYLES,
+  normalizeStatus,
+  statusIndex,
+} from "@/lib/orderStatus";
+
+function OrderTracker({ status }: { status: string | null }) {
+  const current = statusIndex(status);
+  return (
+    <div className="border-b border-border bg-muted/30 px-5 py-4">
+      <div className="flex items-center">
+        {ORDER_STATUSES.map((s, i) => {
+          const done = i <= current;
+          return (
+            <div key={s} className="flex flex-1 items-center last:flex-none">
+              <div className="flex flex-col items-center gap-1">
+                <span
+                  className={`grid h-6 w-6 place-items-center rounded-full text-[10px] font-black ${
+                    done
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-background text-muted-foreground ring-1 ring-border"
+                  }`}
+                >
+                  {i + 1}
+                </span>
+                <span
+                  className={`text-[10px] font-bold ${done ? "text-foreground" : "text-muted-foreground"}`}
+                >
+                  {ORDER_STATUS_LABELS[s]}
+                </span>
+              </div>
+              {i < ORDER_STATUSES.length - 1 && (
+                <span
+                  className={`mx-1 -mt-4 h-0.5 flex-1 rounded-full ${
+                    i < current ? "bg-primary" : "bg-border"
+                  }`}
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/_authenticated/compte")({
   head: () => ({
@@ -141,14 +188,8 @@ function OrdersPanel() {
   return (
     <ul className="space-y-4">
       {orders.map((o) => {
-        const statusStyle =
-          o.status === "paid"
-            ? "bg-emerald-100 text-emerald-700"
-            : o.status === "shipped"
-              ? "bg-blue-100 text-blue-700"
-              : o.status === "cancelled"
-                ? "bg-red-100 text-red-700"
-                : "bg-amber-100 text-amber-800";
+        const st = normalizeStatus(o.status);
+        const statusStyle = ORDER_STATUS_STYLES[st];
         return (
           <li
             key={o.id}
@@ -171,7 +212,7 @@ function OrdersPanel() {
                 <span
                   className={`rounded-full px-3 py-1 text-xs font-bold uppercase ${statusStyle}`}
                 >
-                  {o.status}
+                  {ORDER_STATUS_LABELS[st]}
                 </span>
                 <span className="font-display text-lg font-black">
                   {formatPrice(o.total_cents)}
@@ -196,6 +237,7 @@ function OrdersPanel() {
                 </button>
               </div>
             </div>
+            <OrderTracker status={o.status} />
             <ul className="divide-y divide-border">
               {o.items.map((it) => (
                 <li
