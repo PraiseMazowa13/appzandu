@@ -14,7 +14,16 @@ import {
   adminUploadImage,
   adminGetSettings,
   adminUpdateSettings,
+  adminListOrders,
+  adminUpdateOrderStatus,
 } from "@/lib/admin.functions";
+import {
+  ORDER_STATUSES,
+  ORDER_STATUS_LABELS,
+  ORDER_STATUS_STYLES,
+  normalizeStatus,
+  type OrderStatus,
+} from "@/lib/orderStatus";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Administration — Zandu" }] }),
@@ -245,7 +254,7 @@ function Dashboard({
     }
   };
 
-  const [tab, setTab] = useState<"sales" | "products">("sales");
+  const [tab, setTab] = useState<"sales" | "orders" | "products">("sales");
   const [search, setSearch] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [showCats, setShowCats] = useState(false);
@@ -371,7 +380,7 @@ function Dashboard({
         </div>
 
         <div className="mt-6 inline-flex rounded-full bg-muted p-1">
-          {(["sales", "products"] as const).map((t) => (
+          {(["sales", "orders", "products"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -381,13 +390,15 @@ function Dashboard({
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {t === "sales" ? "📊 Ventes" : "📦 Produits"}
+              {t === "sales" ? "📊 Ventes" : t === "orders" ? "🚚 Suivi" : "📦 Produits"}
             </button>
           ))}
         </div>
 
         {tab === "sales" ? (
           <SalesPanel creds={creds} productCount={stats.total} promoCount={stats.promo} outCount={stats.out} />
+        ) : tab === "orders" ? (
+          <OrderTrackingPanel creds={creds} />
         ) : (
           <>
             <div className="mt-6 grid grid-cols-3 gap-3 md:gap-5">
