@@ -86,7 +86,7 @@ export const createMyOrder = createServerFn({ method: "POST" })
       .insert({
         user_id: userId,
         total_cents: total,
-        status: "pending",
+        status: "received",
         customer_name: data.customer.name,
         customer_phone: data.customer.phone,
         customer_address: data.customer.address,

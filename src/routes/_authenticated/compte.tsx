@@ -141,14 +141,8 @@ function OrdersPanel() {
   return (
     <ul className="space-y-4">
       {orders.map((o) => {
-        const statusStyle =
-          o.status === "paid"
-            ? "bg-emerald-100 text-emerald-700"
-            : o.status === "shipped"
-              ? "bg-blue-100 text-blue-700"
-              : o.status === "cancelled"
-                ? "bg-red-100 text-red-700"
-                : "bg-amber-100 text-amber-800";
+        const st = normalizeStatus(o.status);
+        const statusStyle = ORDER_STATUS_STYLES[st];
         return (
           <li
             key={o.id}
@@ -171,7 +165,7 @@ function OrdersPanel() {
                 <span
                   className={`rounded-full px-3 py-1 text-xs font-bold uppercase ${statusStyle}`}
                 >
-                  {o.status}
+                  {ORDER_STATUS_LABELS[st]}
                 </span>
                 <span className="font-display text-lg font-black">
                   {formatPrice(o.total_cents)}
