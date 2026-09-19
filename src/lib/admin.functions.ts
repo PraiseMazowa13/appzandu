@@ -159,3 +159,49 @@ export const getPublicSettings = createServerFn({ method: "GET" }).handler(async
   (rows ?? []).forEach((r: any) => (map[r.key] = r.value));
   return map;
 });
+
+export const adminListOrders = createServerFn({ method: "POST" })
+  .inputValidator((i) => Auth.parse(i))
+  .handler(async ({ data }) => {
+    checkAuth(data);
+    const sb = await admin();
+    const { data: orders, error } = await sb
+      .from("orders")
+      .select(
+        "id, total_cents, status, created_at, customer_name, customer_phone, customer_address, customer_city",
+      )
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (error) throw new Error(error.message);
+    const ids = (orders ?? []).map((o: any) => o.id);
+    let items: any[] = [];
+    if (ids.length) {
+      const { data: it, error: e2 } = await sb
+        .from("order_items")
+        .select("id, order_id, product_name, unit_price_cents, quantity")
+        .in("order_id", ids);
+      if (e2) throw new Error(e2.message);
+      items = it ?? [];
+    }
+    return (orders ?? []).map((o: any) => ({
+      ...o,
+      items: items.filter((i) => i.order_id === o.id),
+    }));
+  });
+
+export const adminUpdateOrderStatus = createServerFn({ method: "POST" })
+  .inputValidator((i) =>
+    Auth.merge(
+      z.object({
+        id: z.string().uuid(),
+        status: z.enum(["received", "preparing", "shipped", "delivered"]),
+      }),
+    ).parse(i),
+  )
+  .handler(async ({ data }) => {
+    checkAuth(data);
+    const sb = await admin();
+    const { error } = await sb.from("orders").update({ status: data.status }).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
