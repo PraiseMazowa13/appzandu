@@ -63,21 +63,21 @@ export function ProductCard({ product }: { product: ProductCardData }) {
 
         {/* Top-left pill badge */}
         {hasPromo && discountPct >= 5 ? (
-          <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-[11px] font-bold text-primary-foreground shadow-soft">
-            <Flame className="h-3 w-3" /> -{discountPct}%
+          <span className="absolute left-1.5 top-1.5 inline-flex items-center gap-0.5 rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-bold text-primary-foreground shadow-soft md:left-2 md:top-2 md:px-2.5 md:py-1 md:text-[11px]">
+            <Flame className="h-2.5 w-2.5 md:h-3 md:w-3" /> -{discountPct}%
           </span>
         ) : showFreeShipping ? (
-          <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-foreground/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-background shadow-soft">
-            <Truck className="h-3 w-3" /> Livraison<br />offerte
+          <span className="absolute left-1.5 top-1.5 inline-flex items-center gap-0.5 rounded-full bg-foreground/90 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-background shadow-soft md:left-2 md:top-2 md:px-2.5 md:py-1 md:text-[10px]">
+            <Truck className="h-2.5 w-2.5 md:h-3 md:w-3" /> Livraison<br />offerte
           </span>
         ) : product.badge ? (
-          <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-primary-foreground shadow-soft">
+          <span className="absolute left-1.5 top-1.5 inline-flex items-center gap-0.5 rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-primary-foreground shadow-soft md:left-2 md:top-2 md:px-2.5 md:py-1 md:text-[10px]">
             {product.badge}
           </span>
         ) : null}
 
         {outOfStock && (
-          <span className="absolute right-2 top-10 rounded-full bg-foreground/90 px-2 py-0.5 text-[10px] font-bold uppercase text-background">
+          <span className="absolute right-1.5 top-8 rounded-full bg-foreground/90 px-1.5 py-0.5 text-[9px] font-bold uppercase text-background md:right-2 md:top-10 md:px-2 md:text-[10px]">
             Rupture
           </span>
         )}
@@ -95,13 +95,13 @@ export function ProductCard({ product }: { product: ProductCardData }) {
             toggleFav.mutate(product.id);
           }}
           aria-label={isFav ? "Retirer des favoris" : "Ajouter aux favoris"}
-          className={`absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full shadow-soft transition ${
+          className={`absolute right-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-full shadow-soft transition md:right-2 md:top-2 md:h-8 md:w-8 ${
             isFav
               ? "bg-primary text-primary-foreground"
               : "bg-background/90 text-foreground hover:bg-primary hover:text-primary-foreground"
           }`}
         >
-          <Heart className={`h-3.5 w-3.5 ${isFav ? "fill-current" : ""}`} />
+          <Heart className={`h-3 w-3 md:h-3.5 md:w-3.5 ${isFav ? "fill-current" : ""}`} />
         </button>
 
         {/* Bottom-right round add button */}
@@ -123,24 +123,24 @@ export function ProductCard({ product }: { product: ProductCardData }) {
             openCart();
           }}
           aria-label="Ajouter au panier"
-          className="absolute bottom-2 right-2 grid h-9 w-9 place-items-center rounded-full bg-background text-primary shadow-float transition hover:scale-110 hover:bg-primary hover:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+          className="absolute bottom-1.5 right-1.5 grid h-8 w-8 place-items-center rounded-full bg-background text-primary shadow-float transition hover:scale-110 hover:bg-primary hover:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50 md:bottom-2 md:right-2 md:h-9 md:w-9"
         >
-          <Plus className="h-4 w-4" strokeWidth={3} />
+          <Plus className="h-3.5 w-3.5 md:h-4 md:w-4" strokeWidth={3} />
         </button>
       </Link>
 
-      <Link to="/produit/$id" params={{ id: product.id }} className="mt-2 block">
-        <h3 className="line-clamp-2 font-display text-[12px] font-black uppercase leading-tight tracking-wide md:text-[13px]">
+      <Link to="/produit/$id" params={{ id: product.id }} className="mt-1.5 block md:mt-2">
+        <h3 className="line-clamp-2 font-display text-[10px] font-black uppercase leading-tight tracking-wide sm:text-[11px] md:text-[13px]">
           {product.name}
         </h3>
       </Link>
 
-      <div className="mt-1 flex flex-wrap items-baseline gap-x-1.5">
-        <span className="font-display text-sm font-black text-foreground md:text-base">
+      <div className="mt-0.5 flex flex-wrap items-baseline gap-x-1 md:mt-1">
+        <span className="font-display text-xs font-black text-foreground md:text-base">
           {formatPrice(product.price_cents)}
         </span>
         {hasPromo && (
-          <span className="text-[10px] font-medium text-muted-foreground line-through md:text-xs">
+          <span className="text-[9px] font-medium text-muted-foreground line-through md:text-xs">
             {formatPrice(product.compare_at_price_cents!)}
           </span>
         )}
