@@ -1,4 +1,30 @@
 -- =====================================================================
+-- CODES PROMO + colonnes de remise sur les commandes
+-- =====================================================================
+create table if not exists public.promo_codes (
+  id uuid primary key default gen_random_uuid(),
+  code text not null unique,
+  percent integer not null default 0 check (percent >= 0 and percent <= 100),
+  is_active boolean not null default true,
+  expires_at timestamptz,
+  min_order_cents integer,
+  created_at timestamptz not null default now()
+);
+
+grant select, insert, update, delete on public.promo_codes to authenticated;
+grant all on public.promo_codes to service_role;
+
+alter table public.promo_codes enable row level security;
+
+create policy promo_admin_all on public.promo_codes
+  for all to authenticated
+  using (public.has_role(auth.uid(), 'admin'))
+  with check (public.has_role(auth.uid(), 'admin'));
+
+alter table public.orders add column if not exists promo_code text;
+alter table public.orders add column if not exists discount_cents integer not null default 0;
+
+-- =====================================================================
 -- Zandu — Schéma Supabase complet
 -- À coller dans SQL Editor d'un nouveau projet Supabase, puis Run.
 -- =====================================================================
