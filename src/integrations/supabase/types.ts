@@ -92,7 +92,9 @@ export type Database = {
           customer_city: string | null
           customer_name: string | null
           customer_phone: string | null
+          discount_cents: number
           id: string
+          promo_code: string | null
           status: string
           total_cents: number
           user_id: string
@@ -103,7 +105,9 @@ export type Database = {
           customer_city?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          discount_cents?: number
           id?: string
+          promo_code?: string | null
           status?: string
           total_cents: number
           user_id: string
@@ -114,7 +118,9 @@ export type Database = {
           customer_city?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          discount_cents?: number
           id?: string
+          promo_code?: string | null
           status?: string
           total_cents?: number
           user_id?: string
@@ -187,6 +193,36 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+        }
+        Relationships: []
+      }
+      promo_codes: {
+        Row: {
+          code: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          min_order_cents: number | null
+          percent: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          min_order_cents?: number | null
+          percent?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          min_order_cents?: number | null
+          percent?: number
         }
         Relationships: []
       }

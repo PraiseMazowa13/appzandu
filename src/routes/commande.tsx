@@ -1,14 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
-import { Minus, Plus, Trash2, MessageCircle, ShoppingBag } from "lucide-react";
+import { Minus, Plus, Trash2, MessageCircle, ShoppingBag, TicketPercent, X } from "lucide-react";
 import { SiteShell } from "@/components/layout/SiteShell";
 import { useCart, formatPrice } from "@/stores/cart";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useServerFn } from "@tanstack/react-start";
 import { createMyOrder } from "@/lib/account.functions";
-import { getPublicSettings } from "@/lib/admin.functions";
+import { getPublicSettings, validatePromoCode } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/commande")({
   head: () => ({
@@ -36,8 +36,36 @@ function CommandePage() {
   const navigate = useNavigate();
   const saveOrder = useServerFn(createMyOrder);
   const loadSettings = useServerFn(getPublicSettings);
+  const checkPromo = useServerFn(validatePromoCode);
   const [whatsappNumber, setWhatsappNumber] = useState(DEFAULT_WHATSAPP);
   const [mobileMoney, setMobileMoney] = useState(DEFAULT_MOBILE_MONEY);
+  const [promoInput, setPromoInput] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState<{ code: string; percent: number } | null>(null);
+  const [promoLoading, setPromoLoading] = useState(false);
+
+  const subtotal = totalCents();
+  const discountCents = appliedPromo ? Math.round((subtotal * appliedPromo.percent) / 100) : 0;
+  const finalTotal = subtotal - discountCents;
+
+  const applyPromo = async () => {
+    const code = promoInput.trim();
+    if (!code) return;
+    setPromoLoading(true);
+    try {
+      const res = await checkPromo({ data: { code, total_cents: subtotal } });
+      if (res.valid) {
+        setAppliedPromo({ code: res.code, percent: res.percent });
+        toast.success(`Code ${res.code} appliqué : -${res.percent}%`);
+      } else {
+        setAppliedPromo(null);
+        toast.error(res.reason ?? "Code invalide");
+      }
+    } catch {
+      toast.error("Impossible de vérifier le code");
+    } finally {
+      setPromoLoading(false);
+    }
+  };
 
   useEffect(() => {
     loadSettings({})
@@ -71,7 +99,10 @@ function CommandePage() {
       `Tél : ${parsed.data.phone}\n` +
       (parsed.data.address ? `Lieu : ${parsed.data.address}\n` : "") +
       `\n📦 *Articles*\n${lines}\n\n` +
-      `💰 *Total : ${formatPrice(totalCents())}*\n\n` +
+      (appliedPromo
+        ? `Sous-total : ${formatPrice(subtotal)}\n🏷️ Code ${appliedPromo.code} : -${formatPrice(discountCents)}\n`
+        : "") +
+      `💰 *Total : ${formatPrice(finalTotal)}*\n\n` +
       `💳 Paiement Mobile Money : ${mobileMoney}`;
 
     // Sauvegarde en base si connecté (permet l'historique + facture PDF)
@@ -86,6 +117,7 @@ function CommandePage() {
               unit_price_cents: i.price_cents,
               quantity: i.quantity,
             })),
+            promo_code: appliedPromo?.code,
           },
         });
       } catch (e: any) {
@@ -216,11 +248,63 @@ function CommandePage() {
             </div>
 
             <div className="rounded-3xl border border-border bg-card p-5 shadow-card">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Total</span>
-                <span className="font-display text-2xl font-black">
-                  {formatPrice(totalCents())}
-                </span>
+              {/* Code promo */}
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground">Code promo</label>
+                {appliedPromo ? (
+                  <div className="mt-1 flex items-center justify-between rounded-2xl bg-emerald-500/10 px-4 py-2.5">
+                    <span className="inline-flex items-center gap-2 text-sm font-bold text-emerald-600">
+                      <TicketPercent className="h-4 w-4" /> {appliedPromo.code} (-{appliedPromo.percent}%)
+                    </span>
+                    <button
+                      onClick={() => {
+                        setAppliedPromo(null);
+                        setPromoInput("");
+                      }}
+                      aria-label="Retirer le code promo"
+                      className="text-muted-foreground hover:text-destructive"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="mt-1 flex gap-2">
+                    <input
+                      value={promoInput}
+                      onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+                      placeholder="Ex. ZANDU10"
+                      className="h-11 min-w-0 flex-1 rounded-2xl border border-border bg-background px-4 text-sm uppercase outline-none focus:border-primary"
+                    />
+                    <button
+                      onClick={applyPromo}
+                      disabled={promoLoading || !promoInput.trim()}
+                      className="h-11 shrink-0 rounded-2xl bg-foreground px-4 text-xs font-bold text-background disabled:opacity-50"
+                    >
+                      {promoLoading ? "..." : "Appliquer"}
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-4 space-y-1.5 border-t border-border pt-3 text-sm">
+                {appliedPromo && (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Sous-total</span>
+                      <span className="font-semibold">{formatPrice(subtotal)}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-emerald-600">
+                      <span>Remise ({appliedPromo.code})</span>
+                      <span className="font-semibold">-{formatPrice(discountCents)}</span>
+                    </div>
+                  </>
+                )}
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Total</span>
+                  <span className="font-display text-2xl font-black">
+                    {formatPrice(finalTotal)}
+                  </span>
+                </div>
               </div>
               <div className="mt-3 rounded-2xl bg-muted/60 p-3 text-xs">
                 <p className="font-semibold">💳 Paiement Mobile Money</p>

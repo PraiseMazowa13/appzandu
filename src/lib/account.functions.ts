@@ -70,6 +70,7 @@ const OrderInput = z.object({
       }),
     )
     .min(1),
+  promo_code: z.string().trim().max(30).optional(),
 });
 
 export const createMyOrder = createServerFn({ method: "POST" })
@@ -77,10 +78,35 @@ export const createMyOrder = createServerFn({ method: "POST" })
   .inputValidator((input) => OrderInput.parse(input))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const total = data.items.reduce(
+    const subtotal = data.items.reduce(
       (s, i) => s + i.unit_price_cents * i.quantity,
       0,
     );
+
+    // Revalidation du code promo côté serveur
+    let discount = 0;
+    let promoCode: string | null = null;
+    if (data.promo_code) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const code = data.promo_code.toUpperCase();
+      const { data: row } = await supabaseAdmin
+        .from("promo_codes" as any)
+        .select("code, percent, is_active, expires_at, min_order_cents")
+        .eq("code", code)
+        .maybeSingle();
+      const r = row as any;
+      const valid =
+        r &&
+        r.is_active &&
+        (!r.expires_at || new Date(r.expires_at).getTime() >= Date.now()) &&
+        (!r.min_order_cents || subtotal >= r.min_order_cents);
+      if (valid) {
+        promoCode = r.code;
+        discount = Math.round((subtotal * r.percent) / 100);
+      }
+    }
+
+    const total = subtotal - discount;
     const { data: order, error } = await supabase
       .from("orders")
       .insert({
@@ -91,7 +117,9 @@ export const createMyOrder = createServerFn({ method: "POST" })
         customer_phone: data.customer.phone,
         customer_address: data.customer.address,
         customer_city: data.customer.city,
-      })
+        promo_code: promoCode,
+        discount_cents: discount,
+      } as any)
       .select("id")
       .single();
     if (error) throw new Error(error.message);
@@ -106,7 +134,7 @@ export const createMyOrder = createServerFn({ method: "POST" })
       })),
     );
     if (e2) throw new Error(e2.message);
-    return { id: order.id, total_cents: total };
+    return { id: order.id, total_cents: total, discount_cents: discount };
   });
 
 export const listMyFavorites = createServerFn({ method: "GET" })
