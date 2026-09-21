@@ -205,3 +205,103 @@ export const adminUpdateOrderStatus = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ================== CODES PROMO ==================
+
+const PromoSchema = z.object({
+  code: z
+    .string()
+    .trim()
+    .min(3)
+    .max(30)
+    .regex(/^[A-Z0-9-]+$/, "Lettres majuscules, chiffres et tirets uniquement"),
+  percent: z.number().int().min(1).max(100),
+  min_order_cents: z.number().int().nonnegative().nullable().optional(),
+  expires_at: z.string().nullable().optional(),
+  is_active: z.boolean().optional().default(true),
+});
+
+export const adminListPromoCodes = createServerFn({ method: "POST" })
+  .inputValidator((i) => Auth.parse(i))
+  .handler(async ({ data }) => {
+    checkAuth(data);
+    const sb = await admin();
+    const { data: rows, error } = await sb
+      .from("promo_codes" as any)
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return rows ?? [];
+  });
+
+export const adminCreatePromoCode = createServerFn({ method: "POST" })
+  .inputValidator((i) => Auth.merge(z.object({ promo: PromoSchema })).parse(i))
+  .handler(async ({ data }) => {
+    checkAuth(data);
+    const sb = await admin();
+    const { data: row, error } = await sb
+      .from("promo_codes" as any)
+      .insert({
+        code: data.promo.code,
+        percent: data.promo.percent,
+        min_order_cents: data.promo.min_order_cents ?? null,
+        expires_at: data.promo.expires_at || null,
+        is_active: data.promo.is_active ?? true,
+      } as any)
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message.includes("duplicate") ? "Ce code existe déjà" : error.message);
+    return row;
+  });
+
+export const adminUpdatePromoCode = createServerFn({ method: "POST" })
+  .inputValidator((i) =>
+    Auth.merge(z.object({ id: z.string().uuid(), promo: PromoSchema.partial() })).parse(i),
+  )
+  .handler(async ({ data }) => {
+    checkAuth(data);
+    const sb = await admin();
+    const { error } = await sb
+      .from("promo_codes" as any)
+      .update({ ...data.promo, expires_at: data.promo.expires_at || null } as any)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const adminDeletePromoCode = createServerFn({ method: "POST" })
+  .inputValidator((i) => Auth.merge(z.object({ id: z.string().uuid() })).parse(i))
+  .handler(async ({ data }) => {
+    checkAuth(data);
+    const sb = await admin();
+    const { error } = await sb.from("promo_codes" as any).delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Validation publique d'un code promo (appelée depuis la page commande). */
+export const validatePromoCode = createServerFn({ method: "POST" })
+  .inputValidator((i) =>
+    z.object({ code: z.string().trim().min(1).max(30), total_cents: z.number().int().nonnegative() }).parse(i),
+  )
+  .handler(async ({ data }) => {
+    const sb = await admin();
+    const code = data.code.toUpperCase().trim();
+    const { data: row, error } = await sb
+      .from("promo_codes" as any)
+      .select("code, percent, is_active, expires_at, min_order_cents")
+      .eq("code", code)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) return { valid: false as const, reason: "Code inconnu" };
+    const r = row as any;
+    if (!r.is_active) return { valid: false as const, reason: "Ce code n'est plus actif" };
+    if (r.expires_at && new Date(r.expires_at).getTime() < Date.now())
+      return { valid: false as const, reason: "Ce code a expiré" };
+    if (r.min_order_cents && data.total_cents < r.min_order_cents)
+      return {
+        valid: false as const,
+        reason: `Commande minimum de ${Math.round(r.min_order_cents / 100)} FC requise`,
+      };
+    return { valid: true as const, code: r.code, percent: r.percent };
+  });
