@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
-import { Minus, Plus, Trash2, MessageCircle, ShoppingBag } from "lucide-react";
+import { Minus, Plus, Trash2, MessageCircle, ShoppingBag, TicketPercent, X } from "lucide-react";
 import { SiteShell } from "@/components/layout/SiteShell";
 import { useCart, formatPrice } from "@/stores/cart";
 import { toast } from "sonner";

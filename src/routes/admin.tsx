@@ -1536,6 +1536,215 @@ function SettingsCard({ creds }: { creds: { username: string; password: string }
   );
 }
 
+type PromoCode = {
+  id: string;
+  code: string;
+  percent: number;
+  is_active: boolean;
+  expires_at: string | null;
+  min_order_cents: number | null;
+};
+
+function PromoCodesCard({ creds }: { creds: { username: string; password: string } }) {
+  const listFn = useServerFn(adminListPromoCodes);
+  const createFn = useServerFn(adminCreatePromoCode);
+  const updateFn = useServerFn(adminUpdatePromoCode);
+  const deleteFn = useServerFn(adminDeletePromoCode);
+  const [items, setItems] = useState<PromoCode[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ code: "", percent: "", minOrder: "", expires: "" });
+
+  const load = () => {
+    listFn({ data: creds })
+      .then((rows) => setItems(rows as unknown as PromoCode[]))
+      .catch((e: any) => toast.error(e?.message ?? "Erreur de chargement"))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const create = async () => {
+    const code = form.code.trim().toUpperCase();
+    const percent = parseInt(form.percent, 10);
+    if (code.length < 3 || !/^[A-Z0-9-]+$/.test(code)) {
+      toast.error("Code invalide (3+ caractères : majuscules, chiffres, tirets)");
+      return;
+    }
+    if (!percent || percent < 1 || percent > 100) {
+      toast.error("Pourcentage entre 1 et 100 requis");
+      return;
+    }
+    const minFc = parseInt(form.minOrder, 10);
+    setSaving(true);
+    try {
+      await createFn({
+        data: {
+          ...creds,
+          promo: {
+            code,
+            percent,
+            min_order_cents: Number.isFinite(minFc) && minFc > 0 ? minFc * 100 : null,
+            expires_at: form.expires ? new Date(form.expires + "T23:59:59").toISOString() : null,
+          },
+        },
+      });
+      toast.success(`Code ${code} créé (-${percent}%)`);
+      setForm({ code: "", percent: "", minOrder: "", expires: "" });
+      load();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erreur");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggle = async (p: PromoCode) => {
+    try {
+      await updateFn({ data: { ...creds, id: p.id, promo: { is_active: !p.is_active } } });
+      setItems((prev) => prev.map((x) => (x.id === p.id ? { ...x, is_active: !p.is_active } : x)));
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erreur");
+    }
+  };
+
+  const remove = async (p: PromoCode) => {
+    try {
+      await deleteFn({ data: { ...creds, id: p.id } });
+      setItems((prev) => prev.filter((x) => x.id !== p.id));
+      toast.success(`Code ${p.code} supprimé`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erreur");
+    }
+  };
+
+  const expired = (p: PromoCode) => p.expires_at && new Date(p.expires_at).getTime() < Date.now();
+
+  return (
+    <div className="rounded-3xl border border-border bg-card p-5 shadow-card">
+      <div className="flex items-center gap-2">
+        <div className="grid h-9 w-9 place-items-center rounded-2xl bg-primary/10 text-primary">
+          <TicketPercent className="h-4 w-4" />
+        </div>
+        <div>
+          <h3 className="font-display text-base font-black">Codes promo</h3>
+          <p className="text-xs text-muted-foreground">
+            Créez des codes de réduction en % que les clients saisissent à la commande.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <div>
+          <label className="text-xs font-semibold text-muted-foreground">Code</label>
+          <input
+            value={form.code}
+            onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })}
+            placeholder="ZANDU10"
+            className="mt-1 h-11 w-full rounded-2xl border border-border bg-background px-4 text-sm uppercase outline-none focus:border-primary"
+          />
+        </div>
+        <div>
+          <label className="text-xs font-semibold text-muted-foreground">Remise (%)</label>
+          <input
+            type="number"
+            min={1}
+            max={100}
+            value={form.percent}
+            onChange={(e) => setForm({ ...form, percent: e.target.value })}
+            placeholder="10"
+            className="mt-1 h-11 w-full rounded-2xl border border-border bg-background px-4 text-sm outline-none focus:border-primary"
+          />
+        </div>
+        <div>
+          <label className="text-xs font-semibold text-muted-foreground">Minimum (FC, optionnel)</label>
+          <input
+            type="number"
+            min={0}
+            value={form.minOrder}
+            onChange={(e) => setForm({ ...form, minOrder: e.target.value })}
+            placeholder="Ex. 50000"
+            className="mt-1 h-11 w-full rounded-2xl border border-border bg-background px-4 text-sm outline-none focus:border-primary"
+          />
+        </div>
+        <div>
+          <label className="text-xs font-semibold text-muted-foreground">Expiration (optionnel)</label>
+          <input
+            type="date"
+            value={form.expires}
+            onChange={(e) => setForm({ ...form, expires: e.target.value })}
+            className="mt-1 h-11 w-full rounded-2xl border border-border bg-background px-4 text-sm outline-none focus:border-primary"
+          />
+        </div>
+        <div className="flex items-end">
+          <button
+            onClick={create}
+            disabled={saving || loading}
+            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-gradient-hero px-5 text-xs font-bold text-primary-foreground shadow-soft disabled:opacity-50"
+          >
+            <Plus className="h-3.5 w-3.5" /> {saving ? "Création..." : "Créer le code"}
+          </button>
+        </div>
+      </div>
+
+      {loading ? (
+        <p className="mt-4 text-xs text-muted-foreground">Chargement...</p>
+      ) : items.length === 0 ? (
+        <p className="mt-4 rounded-2xl border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
+          Aucun code promo pour le moment.
+        </p>
+      ) : (
+        <ul className="mt-4 space-y-2">
+          {items.map((p) => (
+            <li
+              key={p.id}
+              className="flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-background px-4 py-2.5"
+            >
+              <span className="rounded-full bg-primary/10 px-3 py-1 font-display text-xs font-black uppercase tracking-wider text-primary">
+                {p.code}
+              </span>
+              <span className="text-sm font-bold">-{p.percent}%</span>
+              <span className="text-[11px] text-muted-foreground">
+                {p.min_order_cents ? `min. ${Math.round(p.min_order_cents / 100)} FC` : "sans minimum"}
+                {p.expires_at
+                  ? ` · expire le ${new Date(p.expires_at).toLocaleDateString("fr-FR")}`
+                  : " · sans expiration"}
+              </span>
+              {expired(p) && (
+                <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-bold text-destructive">
+                  Expiré
+                </span>
+              )}
+              <div className="ml-auto flex items-center gap-2">
+                <button
+                  onClick={() => toggle(p)}
+                  className={`rounded-full px-3 py-1.5 text-[11px] font-bold ${
+                    p.is_active
+                      ? "bg-emerald-500/10 text-emerald-600"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {p.is_active ? "Actif" : "Inactif"}
+                </button>
+                <button
+                  onClick={() => remove(p)}
+                  aria-label={`Supprimer ${p.code}`}
+                  className="grid h-8 w-8 place-items-center rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 type DbOrder = {
   id: string;
   total_cents: number;
