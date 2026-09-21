@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useServerFn } from "@tanstack/react-start";
 import { createMyOrder } from "@/lib/account.functions";
-import { getPublicSettings } from "@/lib/admin.functions";
+import { getPublicSettings, validatePromoCode } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/commande")({
   head: () => ({
@@ -36,8 +36,36 @@ function CommandePage() {
   const navigate = useNavigate();
   const saveOrder = useServerFn(createMyOrder);
   const loadSettings = useServerFn(getPublicSettings);
+  const checkPromo = useServerFn(validatePromoCode);
   const [whatsappNumber, setWhatsappNumber] = useState(DEFAULT_WHATSAPP);
   const [mobileMoney, setMobileMoney] = useState(DEFAULT_MOBILE_MONEY);
+  const [promoInput, setPromoInput] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState<{ code: string; percent: number } | null>(null);
+  const [promoLoading, setPromoLoading] = useState(false);
+
+  const subtotal = totalCents();
+  const discountCents = appliedPromo ? Math.round((subtotal * appliedPromo.percent) / 100) : 0;
+  const finalTotal = subtotal - discountCents;
+
+  const applyPromo = async () => {
+    const code = promoInput.trim();
+    if (!code) return;
+    setPromoLoading(true);
+    try {
+      const res = await checkPromo({ data: { code, total_cents: subtotal } });
+      if (res.valid) {
+        setAppliedPromo({ code: res.code, percent: res.percent });
+        toast.success(`Code ${res.code} appliqué : -${res.percent}%`);
+      } else {
+        setAppliedPromo(null);
+        toast.error(res.reason ?? "Code invalide");
+      }
+    } catch {
+      toast.error("Impossible de vérifier le code");
+    } finally {
+      setPromoLoading(false);
+    }
+  };
 
   useEffect(() => {
     loadSettings({})
