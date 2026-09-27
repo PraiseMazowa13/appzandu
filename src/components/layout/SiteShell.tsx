@@ -57,12 +57,6 @@ export function SiteShell({ children }: { children: ReactNode }) {
             >
               <UserIcon className="h-4 w-4" />
             </Link>
-            <Link
-              to="/admin"
-              className="hidden rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground md:inline-flex"
-            >
-              Admin
-            </Link>
             <button
               onClick={openCart}
               aria-label="Ouvrir le panier"
@@ -130,13 +124,6 @@ export function SiteShell({ children }: { children: ReactNode }) {
                   className="mt-2 rounded-2xl bg-gradient-hero px-4 py-3 text-sm font-bold text-primary-foreground shadow-soft"
                 >
                   👤 {user ? "Mon compte" : "Se connecter"}
-                </Link>
-                <Link
-                  to="/admin"
-                  onClick={() => setOpen(false)}
-                  className="mt-2 rounded-2xl border border-border px-4 py-3 text-sm font-semibold text-muted-foreground"
-                >
-                  🔐 Espace admin
                 </Link>
               </nav>
             </motion.aside>
