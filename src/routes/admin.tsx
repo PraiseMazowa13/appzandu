@@ -1655,6 +1655,7 @@ function PromoCodesCard({ creds }: { creds: { username: string; password: string
       </button>
 
       {open && (
+      <>
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <div>
           <label className="text-xs font-semibold text-muted-foreground">Code</label>
@@ -1759,7 +1760,7 @@ function PromoCodesCard({ creds }: { creds: { username: string; password: string
           ))}
         </ul>
       )}
-      )}
+      </>
     </div>
   );
 }
