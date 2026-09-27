@@ -1563,6 +1563,7 @@ function PromoCodesCard({ creds }: { creds: { username: string; password: string
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ code: "", percent: "", minOrder: "", expires: "" });
+  const [open, setOpen] = useState(false);
 
   const load = () => {
     listFn({ data: creds })
