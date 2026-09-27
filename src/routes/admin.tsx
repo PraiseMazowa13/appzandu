@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Lock, LogOut, Plus, Pencil, Trash2, Package, Tag, AlertCircle, Upload, ShoppingCart, TrendingUp, Clock, Check, Trash, Search, SlidersHorizontal, FolderTree, X, MessageCircle, TicketPercent } from "lucide-react";
+import { Lock, LogOut, Plus, Pencil, Trash2, Package, Tag, AlertCircle, Upload, ShoppingCart, TrendingUp, Clock, Check, Trash, Search, SlidersHorizontal, FolderTree, X, MessageCircle, TicketPercent, ChevronDown } from "lucide-react";
 import { SiteShell } from "@/components/layout/SiteShell";
 import { formatPrice } from "@/stores/cart";
 import { toast } from "sonner";
@@ -1447,6 +1447,7 @@ function SettingsCard({ creds }: { creds: { username: string; password: string }
   const [mobile, setMobile] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     getSettings({ data: creds })
@@ -1485,17 +1486,25 @@ function SettingsCard({ creds }: { creds: { username: string; password: string }
 
   return (
     <div className="rounded-3xl border border-border bg-card p-5 shadow-card">
-      <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center gap-2 text-left"
+        aria-expanded={open}
+      >
         <div className="grid h-9 w-9 place-items-center rounded-2xl bg-emerald-500/10 text-emerald-600">
           <MessageCircle className="h-4 w-4" />
         </div>
-        <div>
+        <div className="flex-1">
           <h3 className="font-display text-base font-black">Paramètres de commande</h3>
           <p className="text-xs text-muted-foreground">
             Numéro WhatsApp qui reçoit les commandes & numéro Mobile Money affiché au client.
           </p>
         </div>
-      </div>
+        <ChevronDown className={`h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+      <>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <div>
           <label className="text-xs font-semibold text-muted-foreground">
@@ -1532,6 +1541,8 @@ function SettingsCard({ creds }: { creds: { username: string; password: string }
           <Check className="h-3.5 w-3.5" /> {saving ? "Enregistrement..." : "Enregistrer"}
         </button>
       </div>
+      </>
+      )}
     </div>
   );
 }
@@ -1554,6 +1565,7 @@ function PromoCodesCard({ creds }: { creds: { username: string; password: string
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ code: "", percent: "", minOrder: "", expires: "" });
+  const [open, setOpen] = useState(false);
 
   const load = () => {
     listFn({ data: creds })
@@ -1625,18 +1637,26 @@ function PromoCodesCard({ creds }: { creds: { username: string; password: string
 
   return (
     <div className="rounded-3xl border border-border bg-card p-5 shadow-card">
-      <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center gap-2 text-left"
+        aria-expanded={open}
+      >
         <div className="grid h-9 w-9 place-items-center rounded-2xl bg-primary/10 text-primary">
           <TicketPercent className="h-4 w-4" />
         </div>
-        <div>
+        <div className="flex-1">
           <h3 className="font-display text-base font-black">Codes promo</h3>
           <p className="text-xs text-muted-foreground">
             Créez des codes de réduction en % que les clients saisissent à la commande.
           </p>
         </div>
-      </div>
+        <ChevronDown className={`h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+      </button>
 
+      {open && (
+      <>
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <div>
           <label className="text-xs font-semibold text-muted-foreground">Code</label>
@@ -1740,6 +1760,8 @@ function PromoCodesCard({ creds }: { creds: { username: string; password: string
             </li>
           ))}
         </ul>
+      )}
+      </>
       )}
     </div>
   );
