@@ -11,6 +11,7 @@ import {
   ShoppingBag,
   Trash2,
   ChevronRight,
+  Shield,
 } from "lucide-react";
 import { toast } from "sonner";
 import { SiteShell } from "@/components/layout/SiteShell";
@@ -87,6 +88,20 @@ function ComptePage() {
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("orders");
 
+  const { data: roles } = useQuery({
+    queryKey: ["my-roles"],
+    queryFn: async () => {
+      if (!user) return [] as { role: string }[];
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id);
+      return (data ?? []) as { role: string }[];
+    },
+    enabled: !!user,
+  });
+  const isAdmin = (roles ?? []).some((r) => r.role === "admin");
+
   const signOut = async () => {
     await supabase.auth.signOut();
     toast.success("Déconnecté");
@@ -117,12 +132,22 @@ function ComptePage() {
               <p className="text-sm opacity-90">{user?.email}</p>
             </div>
           </div>
-          <button
-            onClick={signOut}
-            className="inline-flex items-center gap-2 self-start rounded-full bg-background/20 px-4 py-2 text-sm font-semibold backdrop-blur hover:bg-background/30 md:self-auto"
-          >
-            <LogOut className="h-4 w-4" /> Déconnexion
-          </button>
+          <div className="flex items-center gap-2 self-start md:self-auto">
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className="inline-flex items-center gap-2 rounded-full bg-background/20 px-4 py-2 text-sm font-semibold backdrop-blur hover:bg-background/30"
+              >
+                <Shield className="h-4 w-4" /> Espace admin
+              </Link>
+            )}
+            <button
+              onClick={signOut}
+              className="inline-flex items-center gap-2 rounded-full bg-background/20 px-4 py-2 text-sm font-semibold backdrop-blur hover:bg-background/30"
+            >
+              <LogOut className="h-4 w-4" /> Déconnexion
+            </button>
+          </div>
         </div>
 
         {/* Tabs */}
