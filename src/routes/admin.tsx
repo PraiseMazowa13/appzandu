@@ -1486,17 +1486,24 @@ function SettingsCard({ creds }: { creds: { username: string; password: string }
 
   return (
     <div className="rounded-3xl border border-border bg-card p-5 shadow-card">
-      <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center gap-2 text-left"
+        aria-expanded={open}
+      >
         <div className="grid h-9 w-9 place-items-center rounded-2xl bg-emerald-500/10 text-emerald-600">
           <MessageCircle className="h-4 w-4" />
         </div>
-        <div>
+        <div className="flex-1">
           <h3 className="font-display text-base font-black">Paramètres de commande</h3>
           <p className="text-xs text-muted-foreground">
             Numéro WhatsApp qui reçoit les commandes & numéro Mobile Money affiché au client.
           </p>
         </div>
-      </div>
+        <ChevronDown className={`h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <div>
           <label className="text-xs font-semibold text-muted-foreground">
