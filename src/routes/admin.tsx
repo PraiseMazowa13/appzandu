@@ -1542,6 +1542,7 @@ function SettingsCard({ creds }: { creds: { username: string; password: string }
         </button>
       </div>
       </>
+      )}
     </div>
   );
 }
@@ -1761,6 +1762,7 @@ function PromoCodesCard({ creds }: { creds: { username: string; password: string
         </ul>
       )}
       </>
+      )}
     </div>
   );
 }
