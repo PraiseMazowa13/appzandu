@@ -1504,6 +1504,7 @@ function SettingsCard({ creds }: { creds: { username: string; password: string }
         <ChevronDown className={`h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
+      <>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <div>
           <label className="text-xs font-semibold text-muted-foreground">
@@ -1540,7 +1541,7 @@ function SettingsCard({ creds }: { creds: { username: string; password: string }
           <Check className="h-3.5 w-3.5" /> {saving ? "Enregistrement..." : "Enregistrer"}
         </button>
       </div>
-      )}
+      </>
     </div>
   );
 }
