@@ -1540,6 +1540,7 @@ function SettingsCard({ creds }: { creds: { username: string; password: string }
           <Check className="h-3.5 w-3.5" /> {saving ? "Enregistrement..." : "Enregistrer"}
         </button>
       </div>
+      )}
     </div>
   );
 }
