@@ -1447,6 +1447,7 @@ function SettingsCard({ creds }: { creds: { username: string; password: string }
   const [mobile, setMobile] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     getSettings({ data: creds })
