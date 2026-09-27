@@ -1758,6 +1758,7 @@ function PromoCodesCard({ creds }: { creds: { username: string; password: string
           ))}
         </ul>
       )}
+      )}
     </div>
   );
 }
