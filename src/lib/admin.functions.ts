@@ -1,21 +1,25 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createMiddleware, createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const ADMIN_PASSWORD = "0102";
-const ADMIN_USERNAME = "Admin";
-
-function checkAuth(input: { username: string; password: string }) {
-  if (input.username !== ADMIN_USERNAME || input.password !== ADMIN_PASSWORD) {
-    throw new Error("Identifiants invalides");
-  }
-}
+/** Verifie cote serveur que l'appelant est connecte ET possede le role admin. */
+const requireAdmin = createMiddleware({ type: "function" })
+  .middleware([requireSupabaseAuth])
+  .server(async ({ next, context }) => {
+    const { data: isAdmin, error } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (error || !isAdmin) throw new Error("Accès refusé : réservé aux administrateurs");
+    return next();
+  });
 
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return supabaseAdmin;
 }
 
-const Auth = z.object({ username: z.string(), password: z.string() });
+const Auth = z.object({ username: z.string().optional(), password: z.string().optional() });
 
 const ProductSchema = z.object({
   name: z.string().min(1).max(120),
@@ -29,17 +33,10 @@ const ProductSchema = z.object({
   is_active: z.boolean().optional().default(true),
 });
 
-export const adminLogin = createServerFn({ method: "POST" })
-  .inputValidator((i) => Auth.parse(i))
-  .handler(async ({ data }) => {
-    checkAuth(data);
-    return { ok: true };
-  });
-
 export const adminListProducts = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
   .inputValidator((i) => Auth.parse(i))
   .handler(async ({ data }) => {
-    checkAuth(data);
     const sb = await admin();
     const { data: rows, error } = await sb
       .from("products")
@@ -50,9 +47,9 @@ export const adminListProducts = createServerFn({ method: "POST" })
   });
 
 export const adminCreateProduct = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
   .inputValidator((i) => Auth.merge(z.object({ product: ProductSchema })).parse(i))
   .handler(async ({ data }) => {
-    checkAuth(data);
     const sb = await admin();
     const { data: row, error } = await sb
       .from("products")
@@ -64,13 +61,13 @@ export const adminCreateProduct = createServerFn({ method: "POST" })
   });
 
 export const adminUpdateProduct = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
   .inputValidator((i) =>
     Auth.merge(
       z.object({ id: z.string().uuid(), product: ProductSchema.partial() }),
     ).parse(i),
   )
   .handler(async ({ data }) => {
-    checkAuth(data);
     const sb = await admin();
     const { error } = await sb.from("products").update(data.product).eq("id", data.id);
     if (error) throw new Error(error.message);
@@ -78,9 +75,9 @@ export const adminUpdateProduct = createServerFn({ method: "POST" })
   });
 
 export const adminDeleteProduct = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
   .inputValidator((i) => Auth.merge(z.object({ id: z.string().uuid() })).parse(i))
   .handler(async ({ data }) => {
-    checkAuth(data);
     const sb = await admin();
     const { error } = await sb.from("products").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
@@ -88,6 +85,7 @@ export const adminDeleteProduct = createServerFn({ method: "POST" })
   });
 
 export const adminUploadImage = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
   .inputValidator((i) =>
     Auth.merge(
       z.object({
@@ -99,7 +97,6 @@ export const adminUploadImage = createServerFn({ method: "POST" })
     ).parse(i),
   )
   .handler(async ({ data }) => {
-    checkAuth(data);
     const sb = await admin();
     const bytes = Uint8Array.from(atob(data.base64), (c) => c.charCodeAt(0));
     const path = `${Date.now()}-${data.filename.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
@@ -118,9 +115,9 @@ const SETTING_KEYS = ["whatsapp_number", "mobile_money"] as const;
 type SettingKey = (typeof SETTING_KEYS)[number];
 
 export const adminGetSettings = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
   .inputValidator((i) => Auth.parse(i))
   .handler(async ({ data }) => {
-    checkAuth(data);
     const sb = await admin();
     const { data: rows, error } = await sb.from("settings").select("key,value");
     if (error) throw new Error(error.message);
@@ -130,6 +127,7 @@ export const adminGetSettings = createServerFn({ method: "POST" })
   });
 
 export const adminUpdateSettings = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
   .inputValidator((i) =>
     Auth.merge(
       z.object({
@@ -138,7 +136,6 @@ export const adminUpdateSettings = createServerFn({ method: "POST" })
     ).parse(i),
   )
   .handler(async ({ data }) => {
-    checkAuth(data);
     const sb = await admin();
     const rows = Object.entries(data.settings).map(([key, value]) => ({
       key,
@@ -161,9 +158,9 @@ export const getPublicSettings = createServerFn({ method: "GET" }).handler(async
 });
 
 export const adminListOrders = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
   .inputValidator((i) => Auth.parse(i))
   .handler(async ({ data }) => {
-    checkAuth(data);
     const sb = await admin();
     const { data: orders, error } = await sb
       .from("orders")
@@ -190,6 +187,7 @@ export const adminListOrders = createServerFn({ method: "POST" })
   });
 
 export const adminUpdateOrderStatus = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
   .inputValidator((i) =>
     Auth.merge(
       z.object({
@@ -199,7 +197,6 @@ export const adminUpdateOrderStatus = createServerFn({ method: "POST" })
     ).parse(i),
   )
   .handler(async ({ data }) => {
-    checkAuth(data);
     const sb = await admin();
     const { error } = await sb.from("orders").update({ status: data.status }).eq("id", data.id);
     if (error) throw new Error(error.message);
@@ -222,9 +219,9 @@ const PromoSchema = z.object({
 });
 
 export const adminListPromoCodes = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
   .inputValidator((i) => Auth.parse(i))
   .handler(async ({ data }) => {
-    checkAuth(data);
     const sb = await admin();
     const { data: rows, error } = await sb
       .from("promo_codes" as any)
@@ -235,9 +232,9 @@ export const adminListPromoCodes = createServerFn({ method: "POST" })
   });
 
 export const adminCreatePromoCode = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
   .inputValidator((i) => Auth.merge(z.object({ promo: PromoSchema })).parse(i))
   .handler(async ({ data }) => {
-    checkAuth(data);
     const sb = await admin();
     const { data: row, error } = await sb
       .from("promo_codes" as any)
@@ -255,11 +252,11 @@ export const adminCreatePromoCode = createServerFn({ method: "POST" })
   });
 
 export const adminUpdatePromoCode = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
   .inputValidator((i) =>
     Auth.merge(z.object({ id: z.string().uuid(), promo: PromoSchema.partial() })).parse(i),
   )
   .handler(async ({ data }) => {
-    checkAuth(data);
     const sb = await admin();
     const { error } = await sb
       .from("promo_codes" as any)
@@ -270,9 +267,9 @@ export const adminUpdatePromoCode = createServerFn({ method: "POST" })
   });
 
 export const adminDeletePromoCode = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
   .inputValidator((i) => Auth.merge(z.object({ id: z.string().uuid() })).parse(i))
   .handler(async ({ data }) => {
-    checkAuth(data);
     const sb = await admin();
     const { error } = await sb.from("promo_codes" as any).delete().eq("id", data.id);
     if (error) throw new Error(error.message);
