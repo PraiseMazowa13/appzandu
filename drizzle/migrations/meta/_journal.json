@@ -8,6 +8,13 @@
       "when": 1789971698362,
       "tag": "0000_create_promo_codes",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791035081597,
+      "tag": "0001_admin_rls_hardening",
+      "breakpoints": true
     }
   ]
 }

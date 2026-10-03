@@ -1,12 +1,13 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Lock, LogOut, Plus, Pencil, Trash2, Package, Tag, AlertCircle, Upload, ShoppingCart, TrendingUp, Clock, Check, Trash, Search, SlidersHorizontal, FolderTree, X, MessageCircle, TicketPercent, ChevronDown } from "lucide-react";
 import { SiteShell } from "@/components/layout/SiteShell";
 import { formatPrice } from "@/stores/cart";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import {
-  adminLogin,
   adminListProducts,
   adminCreateProduct,
   adminUpdateProduct,
@@ -30,7 +31,8 @@ import {
 } from "@/lib/orderStatus";
 
 export const Route = createFileRoute("/admin")({
-  head: () => ({ meta: [{ title: "Administration — Zandu" }] }),
+  ssr: false,
+  head: () => ({ meta: [{ title: "Administration — Zandu" }, { name: "robots", content: "noindex" }] }),
   component: AdminPage,
 });
 
@@ -48,97 +50,64 @@ type AdminProduct = {
   free_shipping: boolean;
 };
 
-const CREDS_KEY = "zandu-admin-creds";
+const NO_CREDS = { username: "", password: "" };
 
 function AdminPage() {
-  const [creds, setCreds] = useState<{ username: string; password: string } | null>(null);
+  const { user, loading } = useAuth();
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const raw = sessionStorage.getItem(CREDS_KEY);
-    if (raw) {
-      try {
-        setCreds(JSON.parse(raw));
-      } catch {}
+    if (!user) {
+      setIsAdmin(null);
+      return;
     }
-  }, []);
+    supabase
+      .rpc("has_role", { _user_id: user.id, _role: "admin" })
+      .then(({ data, error }) => setIsAdmin(!error && data === true));
+  }, [user]);
 
-  if (!creds) return <LoginScreen onSuccess={(c) => {
-    sessionStorage.setItem(CREDS_KEY, JSON.stringify(c));
-    setCreds(c);
-  }} />;
+  if (loading || (user && isAdmin === null)) {
+    return (
+      <SiteShell>
+        <div className="grid min-h-[60vh] place-items-center text-sm text-muted-foreground">Vérification…</div>
+      </SiteShell>
+    );
+  }
+
+  if (!user || !isAdmin) return <AccessDenied signedIn={!!user} />;
 
   return (
     <Dashboard
-      creds={creds}
-      onLogout={() => {
-        sessionStorage.removeItem(CREDS_KEY);
-        setCreds(null);
+      creds={NO_CREDS}
+      onLogout={async () => {
+        await supabase.auth.signOut();
+        window.location.href = "/";
       }}
     />
   );
 }
 
-function LoginScreen({ onSuccess }: { onSuccess: (c: { username: string; password: string }) => void }) {
-  const login = useServerFn(adminLogin);
-  const [username, setUsername] = useState("Admin");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-
+function AccessDenied({ signedIn }: { signedIn: boolean }) {
   return (
     <SiteShell>
       <div className="mx-auto grid min-h-[70vh] max-w-md place-items-center px-4 py-10">
-        <form
-          onSubmit={async (e) => {
-            e.preventDefault();
-            setLoading(true);
-            try {
-              await login({ data: { username, password } });
-              onSuccess({ username, password });
-              toast.success("Bienvenue !");
-            } catch (err: any) {
-              toast.error(err?.message ?? "Identifiants invalides");
-            } finally {
-              setLoading(false);
-            }
-          }}
-          className="w-full rounded-3xl border border-border bg-card p-8 shadow-float"
-        >
+        <div className="w-full rounded-3xl border border-border bg-card p-8 text-center shadow-float">
           <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-gradient-hero text-primary-foreground shadow-soft">
             <Lock className="h-6 w-6" />
           </div>
-          <h1 className="mt-5 text-center font-display text-2xl font-black">Administration</h1>
-          <p className="mt-1 text-center text-sm text-muted-foreground">
-            Connectez-vous pour gérer la boutique
+          <h1 className="mt-5 font-display text-2xl font-black">Accès réservé</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {signedIn
+              ? "Votre compte n'a pas les droits d'administration."
+              : "Connectez-vous avec un compte administrateur."}
           </p>
-          <div className="mt-6 space-y-3">
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground">Utilisateur</label>
-              <input
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="mt-1 h-11 w-full rounded-2xl border border-border bg-background px-4 text-sm outline-none focus:border-primary"
-                autoComplete="username"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground">Mot de passe</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 h-11 w-full rounded-2xl border border-border bg-background px-4 text-sm outline-none focus:border-primary"
-                autoComplete="current-password"
-              />
-            </div>
-          </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-gradient-hero px-5 py-3 text-sm font-bold text-primary-foreground shadow-soft disabled:opacity-50"
+          <Link
+            to={signedIn ? "/" : "/auth"}
+            className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-gradient-hero px-5 py-3 text-sm font-bold text-primary-foreground shadow-soft"
           >
-            {loading ? "Connexion..." : "Se connecter"}
-          </button>
-        </form>
+            {signedIn ? "Retour à l'accueil" : "Se connecter"}
+          </Link>
+        </div>
       </div>
     </SiteShell>
   );
