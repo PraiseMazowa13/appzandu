@@ -9,40 +9,24 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as CommandeRouteImport } from './routes/commande'
-import { Route as CatalogueRouteImport } from './routes/catalogue'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AdminRouteImport } from './routes/admin'
-import { Route as AProposRouteImport } from './routes/a-propos'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ProduitIdRouteImport } from './routes/produit.$id'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AProposRouteImport } from './routes/a-propos'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as CatalogueRouteImport } from './routes/catalogue'
+import { Route as CommandeRouteImport } from './routes/commande'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedCompteRouteImport } from './routes/_authenticated/compte'
+import { Route as ProduitIdRouteImport } from './routes/produit.$id'
 
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CommandeRoute = CommandeRouteImport.update({
-  id: '/commande',
-  path: '/commande',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CatalogueRoute = CatalogueRouteImport.update({
-  id: '/catalogue',
-  path: '/catalogue',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AProposRoute = AProposRouteImport.update({
@@ -50,24 +34,40 @@ const AProposRoute = AProposRouteImport.update({
   path: '/a-propos',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProduitIdRoute = ProduitIdRouteImport.update({
-  id: '/produit/$id',
-  path: '/produit/$id',
+const CatalogueRoute = CatalogueRouteImport.update({
+  id: '/catalogue',
+  path: '/catalogue',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CommandeRoute = CommandeRouteImport.update({
+  id: '/commande',
+  path: '/commande',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedCompteRoute = AuthenticatedCompteRouteImport.update({
   id: '/compte',
   path: '/compte',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const ProduitIdRoute = ProduitIdRouteImport.update({
+  id: '/produit/$id',
+  path: '/produit/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -156,46 +156,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/commande': {
-      id: '/commande'
-      path: '/commande'
-      fullPath: '/commande'
-      preLoaderRoute: typeof CommandeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/catalogue': {
-      id: '/catalogue'
-      path: '/catalogue'
-      fullPath: '/catalogue'
-      preLoaderRoute: typeof CatalogueRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/a-propos': {
-      id: '/a-propos'
-      path: '/a-propos'
-      fullPath: '/a-propos'
-      preLoaderRoute: typeof AProposRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -205,18 +170,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/a-propos': {
+      id: '/a-propos'
+      path: '/a-propos'
+      fullPath: '/a-propos'
+      preLoaderRoute: typeof AProposRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/produit/$id': {
-      id: '/produit/$id'
-      path: '/produit/$id'
-      fullPath: '/produit/$id'
-      preLoaderRoute: typeof ProduitIdRouteImport
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/catalogue': {
+      id: '/catalogue'
+      path: '/catalogue'
+      fullPath: '/catalogue'
+      preLoaderRoute: typeof CatalogueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/commande': {
+      id: '/commande'
+      path: '/commande'
+      fullPath: '/commande'
+      preLoaderRoute: typeof CommandeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/compte': {
@@ -225,6 +218,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/compte'
       preLoaderRoute: typeof AuthenticatedCompteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/produit/$id': {
+      id: '/produit/$id'
+      path: '/produit/$id'
+      fullPath: '/produit/$id'
+      preLoaderRoute: typeof ProduitIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
