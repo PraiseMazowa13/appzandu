@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Truck, ShieldCheck, Smartphone, Star, ArrowRight, Flame } from "lucide-react";
+import { Truck, ShieldCheck, Smartphone, Star, ArrowRight, Sparkles, Zap, BadgePercent } from "lucide-react";
 import { SiteShell } from "@/components/layout/SiteShell";
 import { ProductCard } from "@/components/product/ProductCard";
 import { listProducts } from "@/lib/products.functions";
@@ -35,67 +35,83 @@ function HomePage() {
   const { data: products } = useSuspenseQuery(productsQO);
   const featured = products.slice(0, 9);
 
+  // Real max discount across active products (0 if none)
+  const maxDiscount = products.reduce((max, p) => {
+    if (!p.compare_at_price_cents || p.compare_at_price_cents <= p.price_cents) return max;
+    const pct = Math.round(
+      ((p.compare_at_price_cents - p.price_cents) / p.compare_at_price_cents) * 100,
+    );
+    return Math.max(max, pct);
+  }, 0);
+
   return (
     <SiteShell>
-      {/* HERO — simple */}
-      <section className="relative overflow-hidden">
-        <div className="mx-auto grid max-w-6xl items-center gap-8 px-4 py-10 md:grid-cols-2 md:px-8 md:py-16">
-          <div>
-            <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-primary">
-              <Flame className="h-3.5 w-3.5" /> Boutique RDC
-            </span>
-            <h1 className="mt-4 font-display text-4xl font-black leading-[1.05] tracking-tight md:text-6xl">
-              Vos essentiels,
-              <br />
-              <span className="bg-gradient-hero bg-clip-text text-transparent">
-                livrés en un éclair
+      {/* HERO — carte dégradée corail pleine largeur */}
+      <section className="px-3 pt-3 md:px-8 md:pt-8">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="relative mx-auto max-w-6xl overflow-hidden rounded-[2.5rem] bg-gradient-hero p-6 shadow-float md:p-12"
+        >
+          {/* Blobs décoratifs */}
+          <div className="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-white/15 blur-3xl" />
+          <div className="absolute -bottom-24 -left-16 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
+          {/* Cartes verre flottantes */}
+          <div className="absolute -bottom-8 -right-6 hidden h-40 w-40 rotate-12 rounded-3xl border border-white/25 bg-white/10 backdrop-blur-xl md:block" />
+          <div className="absolute right-16 top-10 hidden h-20 w-20 -rotate-6 rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl md:block" />
+
+          <div className="relative">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/20 px-3.5 py-1.5 text-[10px] font-black uppercase tracking-widest text-primary-foreground backdrop-blur-md">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary-foreground opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-primary-foreground" />
               </span>
+              Boutique RDC · Livraison 24h
+            </span>
+
+            <h1 className="mt-5 max-w-xl font-display text-4xl font-black leading-[1.08] tracking-tight text-primary-foreground md:text-6xl">
+              Qualité au meilleur{" "}
+              <span className="italic text-primary-foreground/80">prix.</span>
             </h1>
-            <p className="mt-4 max-w-md text-base text-muted-foreground">
-              Produits sélectionnés, livraison rapide en RDC, paiement Mobile Money.
+            <p className="mt-4 max-w-md text-sm leading-relaxed text-primary-foreground/90 md:text-base">
+              Produits sélectionnés, livraison express partout en RDC. Payez en toute sécurité par Mobile Money.
             </p>
-            <div className="mt-6 flex flex-wrap gap-3">
+
+            {/* Double CTA */}
+            <div className="mt-7 flex flex-wrap gap-3">
               <Link
                 to="/catalogue"
-                className="inline-flex items-center gap-2 rounded-full bg-gradient-hero px-6 py-3 text-sm font-bold text-primary-foreground shadow-soft transition hover:opacity-95"
+                className="group inline-flex items-center gap-2 rounded-2xl bg-background px-6 py-3.5 text-sm font-black text-primary shadow-float transition hover:scale-[1.02] active:scale-95"
               >
-                Voir le catalogue <ArrowRight className="h-4 w-4" />
+                Acheter maintenant
+                <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
               </Link>
-            </div>
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
-            className="relative"
-          >
-            <div className="absolute -inset-4 rounded-[2.5rem] bg-gradient-hero opacity-20 blur-3xl" />
-            <div className="relative overflow-hidden rounded-[2rem] border border-border bg-card shadow-float">
-              {featured[0]?.image_url ? (
-                <img
-                  src={featured[0].image_url}
-                  alt={featured[0].name}
-                  className="aspect-[4/3] w-full object-cover"
-                />
-              ) : (
-                <div className="aspect-[4/3] bg-gradient-soft" />
+              {maxDiscount > 0 && (
+                <Link
+                  to="/catalogue"
+                  className="inline-flex items-center gap-2 rounded-2xl border border-white/40 bg-white/10 px-6 py-3.5 text-sm font-bold text-primary-foreground backdrop-blur-md transition hover:bg-white/20 active:scale-95"
+                >
+                  <BadgePercent className="h-4 w-4" />
+                  Jusqu'à -{maxDiscount}%
+                </Link>
               )}
             </div>
-          </motion.div>
-        </div>
+          </div>
+        </motion.div>
       </section>
 
       {/* FEATURED PRODUCTS */}
       <section className="px-4 py-12 md:px-8 md:py-20">
         <div className="mx-auto max-w-6xl">
-          <div className="mb-8 flex flex-col items-start gap-3 md:mb-10 md:flex-row md:items-end md:justify-between">
+          <div className="mb-8 flex items-end justify-between md:mb-10">
             <div>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-primary">
-                <Flame className="h-3 w-3" /> Tendances du moment
+                <Sparkles className="h-3 w-3" /> Tendances du moment
               </span>
               <h2 className="mt-3 font-display text-3xl font-black leading-tight tracking-tight md:text-4xl">
-                Nos produits <span className="bg-gradient-hero bg-clip-text text-transparent">phares</span>
+                Nos produits{" "}
+                <span className="bg-gradient-hero bg-clip-text text-transparent">phares</span>
               </h2>
               <p className="mt-1.5 text-sm text-muted-foreground md:text-base">
                 Sélectionnés pour vous — qualité vérifiée, livraison rapide.
@@ -103,7 +119,7 @@ function HomePage() {
             </div>
             <Link
               to="/catalogue"
-              className="hidden items-center gap-1.5 rounded-full border border-border bg-card px-4 py-2 text-sm font-bold text-foreground shadow-card transition hover:border-primary hover:text-primary md:inline-flex"
+              className="story-link inline-flex shrink-0 items-center gap-1 text-sm font-bold text-primary"
             >
               Tout voir <ArrowRight className="h-4 w-4" />
             </Link>
@@ -121,27 +137,29 @@ function HomePage() {
                 ))}
               </div>
 
-              {/* Pro CTA banner */}
-              <div className="relative mt-10 overflow-hidden rounded-3xl border border-border bg-foreground p-6 shadow-float md:mt-14 md:p-10">
-                <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-primary/30 blur-3xl" />
-                <div className="absolute -bottom-16 -left-10 h-48 w-48 rounded-full bg-primary/20 blur-3xl" />
-                <div className="relative flex flex-col items-start gap-5 md:flex-row md:items-center md:justify-between">
-                  <div className="max-w-md text-background">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-background/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-background/90 backdrop-blur">
-                      Nouveautés chaque semaine
+              {/* Bannière promo sombre */}
+              <div className="relative mt-10 overflow-hidden rounded-[2.5rem] bg-foreground p-6 shadow-float md:mt-14 md:p-10">
+                <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-primary/40 blur-[70px]" />
+                <div className="absolute -bottom-20 -left-10 h-48 w-48 rounded-full bg-primary/20 blur-[60px]" />
+                <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+                  <div className="text-background">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-background/15 bg-background/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest backdrop-blur">
+                      <Zap className="h-3 w-3" /> Promo spéciale
                     </span>
                     <h3 className="mt-3 font-display text-2xl font-black leading-tight md:text-3xl">
-                      Découvrez toute la collection Zandu
+                      {maxDiscount > 0
+                        ? `Jusqu'à -${maxDiscount}% sur une sélection`
+                        : "Découvrez toute la collection Zandu"}
                     </h3>
-                    <p className="mt-2 text-sm text-background/70">
+                    <p className="mt-2 max-w-md text-sm text-background/70">
                       Des dizaines de produits vérifiés, à petits prix, prêts à être livrés chez vous.
                     </p>
                   </div>
                   <Link
                     to="/catalogue"
-                    className="group inline-flex items-center gap-2 rounded-full bg-gradient-hero px-6 py-3.5 text-sm font-black text-primary-foreground shadow-float transition hover:scale-[1.02]"
+                    className="group inline-flex shrink-0 items-center gap-2 self-start rounded-2xl bg-gradient-hero px-6 py-3.5 text-sm font-black text-primary-foreground shadow-float transition hover:scale-[1.02] active:scale-95 md:self-center"
                   >
-                    Explorer le catalogue
+                    Explorer les offres
                     <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
                   </Link>
                 </div>
@@ -151,8 +169,8 @@ function HomePage() {
         </div>
       </section>
 
-      {/* ADVANTAGES — compact */}
-      <section className="border-t border-border bg-card/40 px-4 py-8 md:px-8">
+      {/* AVANTAGES — pastilles dégradées */}
+      <section className="border-t border-border bg-gradient-soft px-4 py-8 md:px-8 md:py-10">
         <div className="mx-auto grid max-w-6xl grid-cols-2 gap-2.5 md:grid-cols-4 md:gap-4">
           {[
             { icon: Truck, label: "Livraison rapide" },
@@ -162,10 +180,10 @@ function HomePage() {
           ].map(({ icon: Icon, label }) => (
             <div
               key={label}
-              className="flex items-center gap-2.5 rounded-2xl border border-border bg-card p-3 shadow-card"
+              className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3 shadow-card"
             >
-              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-hero text-primary-foreground shadow-soft">
-                <Icon className="h-4 w-4" />
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-hero text-primary-foreground shadow-soft">
+                <Icon className="h-4.5 w-4.5" />
               </div>
               <h3 className="font-display text-xs font-bold md:text-sm">{label}</h3>
             </div>
