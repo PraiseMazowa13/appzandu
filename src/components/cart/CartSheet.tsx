@@ -11,8 +11,8 @@ export function CartSheet() {
 
   return (
     <Sheet open={isOpen} onOpenChange={(o) => !o && close()}>
-      <SheetContent side="right" className="flex w-full flex-col p-0 sm:max-w-md">
-        <SheetHeader className="border-b px-5 py-4">
+      <SheetContent side="right" className="flex w-full flex-col rounded-l-3xl bg-muted p-0 sm:max-w-md">
+        <SheetHeader className="px-5 py-6 text-center">
           <SheetTitle className="font-display text-xl">Mon panier</SheetTitle>
         </SheetHeader>
 
@@ -45,26 +45,26 @@ export function CartSheet() {
                     </div>
                     <div className="flex min-w-0 flex-1 flex-col justify-between">
                       <div className="flex items-start justify-between gap-2">
-                        <h4 className="line-clamp-1 text-sm font-semibold">{item.name}</h4>
-                        <button onClick={() => remove(item.id)} className="text-muted-foreground hover:text-destructive">
+                        <h4 className="line-clamp-2 text-sm font-semibold">{item.name}</h4>
+                        <Button variant="ghost" size="icon" aria-label={`Retirer ${item.name}`} onClick={() => remove(item.id)} className="h-6 w-6 text-primary hover:text-destructive">
                           <Trash2 className="h-4 w-4" />
-                        </button>
+                        </Button>
                       </div>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1 rounded-full bg-muted p-1">
-                          <button
-                            onClick={() => setQty(item.id, item.quantity - 1)}
+                          <Button variant="ghost" size="icon"
+                            aria-label={`Diminuer ${item.name}`} onClick={() => setQty(item.id, item.quantity - 1)}
                             className="grid h-6 w-6 place-items-center rounded-full bg-background"
                           >
                             <Minus className="h-3 w-3" />
-                          </button>
+                          </Button>
                           <span className="w-6 text-center text-sm font-semibold">{item.quantity}</span>
-                          <button
-                            onClick={() => setQty(item.id, item.quantity + 1)}
+                          <Button variant="ghost" size="icon"
+                            aria-label={`Augmenter ${item.name}`} onClick={() => setQty(item.id, item.quantity + 1)}
                             className="grid h-6 w-6 place-items-center rounded-full bg-background"
                           >
                             <Plus className="h-3 w-3" />
-                          </button>
+                          </Button>
                         </div>
                         <span className="font-display text-sm font-bold">
                           {formatPrice(item.price_cents * item.quantity)}
@@ -79,14 +79,14 @@ export function CartSheet() {
         </div>
 
         {items.length > 0 && (
-          <div className="border-t bg-card/50 px-5 py-4">
+          <div className="rounded-t-3xl bg-card px-5 py-6">
             <div className="mb-3 flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Total</span>
               <span className="font-display text-xl font-bold">{formatPrice(totalCents())}</span>
             </div>
             <Button
               size="lg"
-              className="w-full rounded-2xl bg-gradient-hero text-primary-foreground shadow-soft"
+              className="h-12 w-full rounded-full bg-gradient-hero text-primary-foreground shadow-soft"
               onClick={() => {
                 close();
                 navigate({ to: "/commande" });

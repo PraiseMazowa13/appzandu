@@ -1,5 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Menu, ShoppingBag, Zap, X, User as UserIcon } from "lucide-react";
+import { Menu, ShoppingBag, Zap, X, Home, LayoutGrid, Heart, User as UserIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useState, type ReactNode } from "react";
 import { useCart } from "@/stores/cart";
@@ -57,7 +58,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
             >
               <UserIcon className="h-4 w-4" />
             </Link>
-            <button
+            <Button variant="ghost" size="icon"
               onClick={openCart}
               aria-label="Ouvrir le panier"
               className="relative grid h-10 w-10 place-items-center rounded-full bg-muted hover:bg-muted/70"
@@ -68,14 +69,14 @@ export function SiteShell({ children }: { children: ReactNode }) {
                   {count}
                 </span>
               )}
-            </button>
-            <button
+            </Button>
+            <Button variant="ghost" size="icon"
               onClick={() => setOpen(true)}
               aria-label="Ouvrir le menu"
               className="grid h-10 w-10 place-items-center rounded-full bg-muted hover:bg-muted/70 md:hidden"
             >
               <Menu className="h-4 w-4" />
-            </button>
+            </Button>
           </div>
         </div>
       </header>
@@ -99,13 +100,13 @@ export function SiteShell({ children }: { children: ReactNode }) {
             >
               <div className="flex items-center justify-between">
                 <span className="font-display text-lg font-black">Menu</span>
-                <button
+                <Button variant="ghost" size="icon"
                   onClick={() => setOpen(false)}
                   className="grid h-9 w-9 place-items-center rounded-full bg-muted"
                   aria-label="Fermer"
                 >
                   <X className="h-4 w-4" />
-                </button>
+                </Button>
               </div>
               <nav className="mt-8 flex flex-col gap-2">
                 {NAV.map((n) => (
@@ -133,7 +134,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
 
       <main className="flex-1">{children}</main>
 
-      <footer className="border-t border-border/60 bg-card/40">
+      <footer className="pb-24 md:pb-0 border-t border-border/60 bg-card/40">
         <div className="mx-auto grid max-w-6xl gap-6 px-4 py-10 md:grid-cols-3 md:px-8">
           <div>
             <div className="flex items-center gap-2 font-display text-lg font-black">
@@ -171,6 +172,15 @@ export function SiteShell({ children }: { children: ReactNode }) {
           © {new Date().getFullYear()} Zandu — Tous droits réservés
         </div>
       </footer>
+      <nav aria-label="Navigation rapide" className="fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl md:hidden">
+        <div className="mx-auto grid max-w-md grid-cols-5 items-center">
+          <Button asChild variant="ghost" size="icon" className={`mx-auto rounded-full ${pathname === "/catalogue" ? "text-primary" : "text-muted-foreground"}`}><Link to="/catalogue" aria-label="Catalogue"><LayoutGrid /></Link></Button>
+          <Button asChild variant="ghost" size="icon" className="mx-auto rounded-full text-muted-foreground"><Link to={user ? "/compte" : "/auth"} aria-label="Mes favoris"><Heart /></Link></Button>
+          <Button asChild size="icon" className="mx-auto -mt-7 h-14 w-14 rounded-full border-4 border-background bg-gradient-hero shadow-soft"><Link to="/" aria-label="Accueil"><Home /></Link></Button>
+          <Button variant="ghost" size="icon" onClick={openCart} aria-label="Mon panier" className="relative mx-auto rounded-full text-muted-foreground"><ShoppingBag />{count > 0 && <span className="absolute right-0 top-0 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[9px] text-primary-foreground">{count}</span>}</Button>
+          <Button asChild variant="ghost" size="icon" className="mx-auto rounded-full text-muted-foreground"><Link to={user ? "/compte" : "/auth"} aria-label="Connexion et compte"><UserIcon /></Link></Button>
+        </div>
+      </nav>
     </div>
   );
 }
