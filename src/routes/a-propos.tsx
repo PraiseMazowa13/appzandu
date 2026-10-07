@@ -7,6 +7,10 @@ export const Route = createFileRoute("/a-propos")({
     meta: [
       { title: "À propos — Zandu" },
       { name: "description", content: "L'histoire et la mission de Zandu, votre boutique express en RDC." },
+      { property: "og:title", content: "À propos — Zandu" },
+      { property: "og:description", content: "L'histoire et la mission de Zandu, votre boutique express en RDC." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: AboutPage,

@@ -8,14 +8,19 @@ import { Button } from "@/components/ui/button";
 import { listProducts } from "@/lib/products.functions";
 
 const productsQO = queryOptions({ queryKey: ["products", "all"], queryFn: () => listProducts() });
+const selectBannerProduct = (products: Awaited<ReturnType<typeof listProducts>>) => products.find(p => p.image_url && p.compare_at_price_cents && p.compare_at_price_cents > p.price_cents) ?? products.find(p => p.image_url);
 export const Route = createFileRoute("/")({
-  head: () => ({ meta: [
+  head: ({ loaderData }) => ({ meta: [
     { title: "Zandu — Boutique en ligne RDC" },
     { name: "description", content: "Découvrez les produits Zandu et commandez en RDC avec Mobile Money." },
     { property: "og:title", content: "Zandu — Boutique en ligne RDC" },
     { property: "og:description", content: "Vos essentiels, vos offres et vos nouveautés en RDC." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary_large_image" },
+    ...(selectBannerProduct(loaderData ?? [])?.image_url?.startsWith("https://") ? [
+      { property: "og:image", content: selectBannerProduct(loaderData ?? [])?.image_url ?? "" },
+      { name: "twitter:image", content: selectBannerProduct(loaderData ?? [])?.image_url ?? "" },
+    ] : []),
   ] }),
   loader: ({ context }) => context.queryClient.ensureQueryData(productsQO),
   component: HomePage,
@@ -29,7 +34,7 @@ function HomePage() {
   const categories = [...new Set(products.map(p => p.category).filter((c): c is string => Boolean(c)))];
   const featured = products.filter(p => (!category || p.category === category) && p.name.toLocaleLowerCase().includes(search.toLocaleLowerCase())).slice(0, 9);
   const maxDiscount = products.reduce((max, p) => p.compare_at_price_cents && p.compare_at_price_cents > p.price_cents ? Math.max(max, Math.round((1 - p.price_cents / p.compare_at_price_cents) * 100)) : max, 0);
-  const bannerProduct = products.find(p => p.image_url && p.compare_at_price_cents && p.compare_at_price_cents > p.price_cents) ?? products.find(p => p.image_url);
+  const bannerProduct = selectBannerProduct(products);
 
   return <SiteShell>
     <div className="mx-auto max-w-6xl px-4 pb-10 pt-4 md:px-8 md:pt-6">

@@ -32,7 +32,7 @@ import {
 
 export const Route = createFileRoute("/admin")({
   ssr: false,
-  head: () => ({ meta: [{ title: "Administration — Zandu" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [{ title: "Administration — Zandu" }, { name: "description", content: "Gestion privée de la boutique Zandu." }, { property: "og:title", content: "Administration — Zandu" }, { property: "og:description", content: "Gestion privée de la boutique Zandu." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }, { name: "robots", content: "noindex" }] }),
   component: AdminPage,
 });
 
