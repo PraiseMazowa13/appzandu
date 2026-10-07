@@ -16,6 +16,10 @@ export const Route = createFileRoute("/catalogue")({
     meta: [
       { title: "Catalogue — Zandu" },
       { name: "description", content: "Découvrez tous les produits disponibles chez Zandu." },
+      { property: "og:title", content: "Catalogue — Zandu" },
+      { property: "og:description", content: "Découvrez tous les produits disponibles chez Zandu." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   loader: ({ context }) => context.queryClient.ensureQueryData(productsQO),

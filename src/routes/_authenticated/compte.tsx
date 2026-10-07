@@ -76,6 +76,10 @@ export const Route = createFileRoute("/_authenticated/compte")({
     meta: [
       { title: "Mon compte — Zandu" },
       { name: "description", content: "Votre espace personnel : commandes, favoris et factures." },
+      { property: "og:title", content: "Mon compte — Zandu" },
+      { property: "og:description", content: "Votre espace personnel : commandes, favoris et factures." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: ComptePage,

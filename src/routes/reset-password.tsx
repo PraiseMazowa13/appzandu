@@ -10,6 +10,10 @@ export const Route = createFileRoute("/reset-password")({
     meta: [
       { title: "Réinitialiser le mot de passe — Zandu" },
       { name: "description", content: "Définissez un nouveau mot de passe pour votre compte Zandu." },
+      { property: "og:title", content: "Réinitialiser le mot de passe — Zandu" },
+      { property: "og:description", content: "Définissez un nouveau mot de passe pour votre compte Zandu." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: ResetPasswordPage,

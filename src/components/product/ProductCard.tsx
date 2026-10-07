@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Plus, Flame, Truck, Heart } from "lucide-react";
 import { useCart, formatPrice } from "@/stores/cart";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useFavoriteIds, useToggleFavorite } from "@/hooks/useFavorites";
@@ -28,12 +29,12 @@ export function ProductCard({ product }: { product: ProductCardData }) {
   const isFav = !!favIds?.includes(product.id);
 
   const outOfStock = product.stock <= 0;
-  const hasPromo =
-    product.compare_at_price_cents && product.compare_at_price_cents > product.price_cents;
+  const comparePrice = product.compare_at_price_cents;
+  const hasPromo = comparePrice !== null && comparePrice > product.price_cents;
   const discountPct = hasPromo
     ? Math.round(
-        ((product.compare_at_price_cents! - product.price_cents) /
-          product.compare_at_price_cents!) *
+        (((comparePrice ?? product.price_cents) - product.price_cents) /
+          (comparePrice ?? product.price_cents)) *
           100,
       )
     : 0;
@@ -41,7 +42,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
   const showFreeShipping = product.free_shipping && !hasPromo;
 
   return (
-    <article className="group flex flex-col">
+    <article className="group relative flex min-w-0 flex-col overflow-hidden rounded-2xl bg-card p-1.5 shadow-card md:p-3">
       <Link
         to="/produit/$id"
         params={{ id: product.id }}
@@ -83,7 +84,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
         )}
 
         {/* Favorite heart */}
-        <button
+        <Button variant="ghost" size="icon"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -102,10 +103,10 @@ export function ProductCard({ product }: { product: ProductCardData }) {
           }`}
         >
           <Heart className={`h-3 w-3 md:h-3.5 md:w-3.5 ${isFav ? "fill-current" : ""}`} />
-        </button>
+        </Button>
 
         {/* Bottom-right round add button */}
-        <button
+        <Button variant="ghost" size="icon"
           disabled={outOfStock}
           onClick={(e) => {
             e.preventDefault();
@@ -123,14 +124,14 @@ export function ProductCard({ product }: { product: ProductCardData }) {
             openCart();
           }}
           aria-label="Ajouter au panier"
-          className="absolute bottom-1.5 right-1.5 grid h-8 w-8 place-items-center rounded-full bg-background text-primary shadow-float transition hover:scale-110 hover:bg-primary hover:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50 md:bottom-2 md:right-2 md:h-9 md:w-9"
+          className="absolute bottom-1.5 right-1.5 grid h-7 w-7 place-items-center rounded-full bg-primary text-primary-foreground shadow-float transition hover:scale-110 hover:bg-primary hover:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50 md:bottom-2 md:right-2 md:h-9 md:w-9"
         >
           <Plus className="h-3.5 w-3.5 md:h-4 md:w-4" strokeWidth={3} />
-        </button>
+        </Button>
       </Link>
 
-      <Link to="/produit/$id" params={{ id: product.id }} className="mt-1.5 block md:mt-2">
-        <h3 className="line-clamp-2 font-display text-[10px] font-black uppercase leading-tight tracking-wide sm:text-[11px] md:text-[13px]">
+      <Link to="/produit/$id" params={{ id: product.id }} className="mt-2 block min-h-7 md:min-h-9">
+        <h3 className="line-clamp-2 font-display text-[10px] font-bold leading-snug sm:text-[11px] md:text-[13px]">
           {product.name}
         </h3>
       </Link>
@@ -141,7 +142,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
         </span>
         {hasPromo && (
           <span className="text-[9px] font-medium text-muted-foreground line-through md:text-xs">
-            {formatPrice(product.compare_at_price_cents!)}
+            {formatPrice((comparePrice ?? product.price_cents))}
           </span>
         )}
       </div>

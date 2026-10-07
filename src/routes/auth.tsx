@@ -10,6 +10,10 @@ export const Route = createFileRoute("/auth")({
     meta: [
       { title: "Se connecter — Zandu" },
       { name: "description", content: "Accédez à votre compte Zandu pour suivre vos commandes et retrouver vos favoris." },
+      { property: "og:title", content: "Se connecter — Zandu" },
+      { property: "og:description", content: "Accédez à votre compte Zandu pour suivre vos commandes et retrouver vos favoris." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: AuthPage,

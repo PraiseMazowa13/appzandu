@@ -1,0 +1,2 @@
+# Architecture rules
+- Shopping presentation uses the existing cart store, product queries and checkout promotion validation; reference mockups must not introduce fake product variants or promotional codes because purchasable data remains authoritative.
