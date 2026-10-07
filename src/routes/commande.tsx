@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { Minus, Plus, Trash2, MessageCircle, ShoppingBag, TicketPercent, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { SiteShell } from "@/components/layout/SiteShell";
 import { useCart, formatPrice } from "@/stores/cart";
 import { toast } from "sonner";
@@ -15,6 +16,10 @@ export const Route = createFileRoute("/commande")({
     meta: [
       { title: "Commande — Zandu" },
       { name: "description", content: "Validez votre commande via WhatsApp ou Mobile Money." },
+      { property: "og:title", content: "Commande — Zandu" },
+      { property: "og:description", content: "Votre panier Zandu et votre commande en RDC." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: CommandePage,
@@ -139,9 +144,7 @@ function CommandePage() {
     <SiteShell>
       <div className="mx-auto max-w-5xl px-4 py-8 md:px-8 md:py-12">
         <h1 className="font-display text-3xl font-black md:text-4xl">Ma commande</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Vérifiez votre panier, renseignez vos coordonnées et finalisez via WhatsApp.
-        </p>
+
 
         <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_400px]">
           <section className="space-y-4">
@@ -165,7 +168,7 @@ function CommandePage() {
                 {items.map((item) => (
                   <li
                     key={item.id}
-                    className="flex gap-4 rounded-3xl border border-border bg-card p-3 shadow-card"
+                    className="flex gap-3 rounded-2xl bg-card p-3 shadow-card"
                   >
                     <div className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-2xl bg-gradient-soft">
                       {item.image_url ? (
@@ -182,32 +185,32 @@ function CommandePage() {
                     </div>
                     <div className="flex min-w-0 flex-1 flex-col justify-between">
                       <div className="flex items-start justify-between gap-2">
-                        <h3 className="line-clamp-1 font-semibold">{item.name}</h3>
-                        <button
+                        <h3 className="line-clamp-2 text-sm font-semibold">{item.name}</h3>
+                        <Button variant="ghost" size="icon"
                           onClick={() => remove(item.id)}
-                          className="text-muted-foreground hover:text-destructive"
+                          className="h-7 w-7 shrink-0 text-primary hover:text-destructive"
                           aria-label="Retirer"
                         >
                           <Trash2 className="h-4 w-4" />
-                        </button>
+                        </Button>
                       </div>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1 rounded-full bg-muted p-1">
-                          <button
+                          <Button variant="ghost" size="icon" aria-label={`Diminuer ${item.name}`}
                             onClick={() => setQty(item.id, item.quantity - 1)}
                             className="grid h-7 w-7 place-items-center rounded-full bg-background"
                           >
                             <Minus className="h-3 w-3" />
-                          </button>
+                          </Button>
                           <span className="w-7 text-center text-sm font-semibold">
                             {item.quantity}
                           </span>
-                          <button
+                          <Button variant="ghost" size="icon" aria-label={`Augmenter ${item.name}`}
                             onClick={() => setQty(item.id, item.quantity + 1)}
                             className="grid h-7 w-7 place-items-center rounded-full bg-background"
                           >
                             <Plus className="h-3 w-3" />
-                          </button>
+                          </Button>
                         </div>
                         <span className="font-display font-bold">
                           {formatPrice(item.price_cents * item.quantity)}
@@ -221,7 +224,7 @@ function CommandePage() {
           </section>
 
           <aside className="space-y-4">
-            <div className="rounded-3xl border border-border bg-card p-5 shadow-card">
+            <div className="border-t border-border pt-5">
               <h2 className="font-display text-lg font-bold">Vos coordonnées</h2>
               <div className="mt-4 space-y-3">
                 {(
@@ -247,7 +250,7 @@ function CommandePage() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-border bg-card p-5 shadow-card">
+            <div className="border-t border-border pt-5">
               {/* Code promo */}
               <div>
                 <label className="text-xs font-semibold text-muted-foreground">Code promo</label>
@@ -256,16 +259,16 @@ function CommandePage() {
                     <span className="inline-flex items-center gap-2 text-sm font-bold text-emerald-600">
                       <TicketPercent className="h-4 w-4" /> {appliedPromo.code} (-{appliedPromo.percent}%)
                     </span>
-                    <button
+                    <Button
                       onClick={() => {
                         setAppliedPromo(null);
                         setPromoInput("");
                       }}
                       aria-label="Retirer le code promo"
-                      className="text-muted-foreground hover:text-destructive"
+                      className="h-7 w-7 shrink-0 text-primary hover:text-destructive"
                     >
                       <X className="h-4 w-4" />
-                    </button>
+                    </Button>
                   </div>
                 ) : (
                   <div className="mt-1 flex gap-2">
@@ -273,15 +276,15 @@ function CommandePage() {
                       value={promoInput}
                       onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
                       placeholder="Ex. ZANDU10"
-                      className="h-11 min-w-0 flex-1 rounded-2xl border border-border bg-background px-4 text-sm uppercase outline-none focus:border-primary"
+                      className="h-11 min-w-0 flex-1 rounded-full border border-border bg-background px-4 text-sm uppercase outline-none focus:border-primary"
                     />
-                    <button
+                    <Button
                       onClick={applyPromo}
                       disabled={promoLoading || !promoInput.trim()}
-                      className="h-11 shrink-0 rounded-2xl bg-foreground px-4 text-xs font-bold text-background disabled:opacity-50"
+                      className="h-11 shrink-0 rounded-full bg-foreground px-4 text-xs font-bold text-background disabled:opacity-50"
                     >
                       {promoLoading ? "..." : "Appliquer"}
-                    </button>
+                    </Button>
                   </div>
                 )}
               </div>
@@ -312,15 +315,15 @@ function CommandePage() {
                   Envoyez le montant au <strong className="text-foreground">{mobileMoney}</strong>
                 </p>
               </div>
-              <button
+              <Button
                 onClick={handleOrder}
                 disabled={items.length === 0}
                 className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-emerald-500 px-5 py-3.5 text-sm font-bold text-white shadow-soft transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <MessageCircle className="h-4 w-4" /> Commander via WhatsApp
-              </button>
+              </Button>
               {items.length > 0 && (
-                <button
+                <Button
                   onClick={() => {
                     clear();
                     toast.message("Panier vidé");
@@ -328,7 +331,7 @@ function CommandePage() {
                   className="mt-2 w-full rounded-full px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-destructive"
                 >
                   Vider le panier
-                </button>
+                </Button>
               )}
             </div>
           </aside>
