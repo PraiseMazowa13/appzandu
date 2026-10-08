@@ -34,6 +34,9 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-ring-offset-background: var(--background);
+  --color-surface-warm: var(--surface-warm);
+  --color-surface-deep: var(--surface-deep);
+  --color-surface-deep-foreground: var(--surface-deep-foreground);
 
   --font-display: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
   --font-sans: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
@@ -64,6 +67,11 @@
 
   --accent: oklch(0.95 0.04 40);
   --accent-foreground: oklch(0.3 0.1 25);
+
+  /* Section surfaces */
+  --surface-warm: oklch(0.945 0.038 45);
+  --surface-deep: oklch(0.23 0.035 25);
+  --surface-deep-foreground: oklch(0.97 0.012 80);
 
   --destructive: oklch(0.6 0.24 28);
   --destructive-foreground: oklch(0.99 0.01 80);
