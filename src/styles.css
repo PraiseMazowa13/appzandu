@@ -69,7 +69,7 @@
   --accent-foreground: oklch(0.3 0.1 25);
 
   /* Section surfaces */
-  --surface-warm: oklch(0.965 0.022 55);
+  --surface-warm: oklch(0.945 0.038 45);
   --surface-deep: oklch(0.23 0.035 25);
   --surface-deep-foreground: oklch(0.97 0.012 80);
 
